@@ -145,5 +145,12 @@
     "patch-package": "^8.0.1",
     "typescript": "~5.9.2"
   },
+  "overrides": {
+    "brace-expansion": "1.1.13",
+    "react-native-health": {
+      "@expo/plist": "0.4.8",
+      "@xmldom/xmldom": "0.8.12"
+    }
+  },
   "private": true
 }
