@@ -149,7 +149,11 @@ export default function BodyMap3DProgressScreen() {
 
   return (
     <Screen edges={['top']} aura>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} scrollEnabled={!mapInteracting}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={!mapInteracting && cameraPreset !== 'ORBIT'}
+      >
         <View style={styles.header}>
           <Pressable onPress={() => router.back()}>
             <Text style={styles.back}>Back</Text>

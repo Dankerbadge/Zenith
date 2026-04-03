@@ -112,6 +112,8 @@ class BodyMap3DView: UIView {
   private var cameraDistance: Float = 3.35
   private var minCameraDistance: Float = 2.1
   private var maxCameraDistance: Float = 5.4
+  private var frontBackOrthographicScale: Double = 2.4
+  private var frontBackVerticalOffset: Float = 0.05
   private var activeGestureCount = 0
   private var rendererMode: String = "unknown"
 
@@ -192,32 +194,32 @@ class BodyMap3DView: UIView {
     let key = SCNNode()
     key.light = SCNLight()
     key.light?.type = .omni
-    key.light?.color = UIColor(white: 1.0, alpha: 1.0)
-    key.light?.intensity = 1120
+    key.light?.color = UIColor(white: 0.98, alpha: 1.0)
+    key.light?.intensity = 860
     key.position = SCNVector3(2.35, 2.25, 2.45)
     scene.rootNode.addChildNode(key)
 
     let fill = SCNNode()
     fill.light = SCNLight()
     fill.light?.type = .omni
-    fill.light?.color = UIColor(red: 0.92, green: 0.96, blue: 1.0, alpha: 1.0)
-    fill.light?.intensity = 520
+    fill.light?.color = UIColor(red: 0.94, green: 0.96, blue: 0.99, alpha: 1.0)
+    fill.light?.intensity = 290
     fill.position = SCNVector3(-2.15, 1.65, 1.9)
     scene.rootNode.addChildNode(fill)
 
     let rim = SCNNode()
     rim.light = SCNLight()
     rim.light?.type = .omni
-    rim.light?.color = UIColor(red: 0.78, green: 0.88, blue: 1.0, alpha: 1.0)
-    rim.light?.intensity = 280
+    rim.light?.color = UIColor(red: 0.86, green: 0.90, blue: 0.97, alpha: 1.0)
+    rim.light?.intensity = 120
     rim.position = SCNVector3(0.65, 1.55, -2.35)
     scene.rootNode.addChildNode(rim)
 
     let ambient = SCNNode()
     ambient.light = SCNLight()
     ambient.light?.type = .ambient
-    ambient.light?.color = UIColor(white: 0.18, alpha: 1.0)
-    ambient.light?.intensity = 170
+    ambient.light?.color = UIColor(white: 0.16, alpha: 1.0)
+    ambient.light?.intensity = 100
     scene.rootNode.addChildNode(ambient)
   }
 
@@ -227,6 +229,7 @@ class BodyMap3DView: UIView {
     cameraNode.camera?.zNear = 0.05
     cameraNode.camera?.zFar = 100
     cameraNode.camera?.automaticallyAdjustsZRange = true
+    cameraNode.camera?.usesOrthographicProjection = false
     scene.rootNode.addChildNode(cameraNode)
 
     let target = SCNLookAtConstraint(target: focusNode)
@@ -262,16 +265,21 @@ class BodyMap3DView: UIView {
   private func applyCameraPreset(animated: Bool) {
     let preset = currentCameraPreset()
     let focus = focusWorldPosition()
+    guard let camera = cameraNode.camera else { return }
     if preset != "ORBIT" {
       if activeGestureCount > 0 {
         activeGestureCount = 0
         emitInteractionState(false)
       }
-      let y = focus.y + max(0.06, cameraDistance * 0.06)
+      camera.usesOrthographicProjection = true
+      camera.orthographicScale = frontBackOrthographicScale
+      let y = focus.y + frontBackVerticalOffset
       let z = preset == "BACK" ? (focus.z - cameraDistance) : (focus.z + cameraDistance)
       moveCamera(to: SCNVector3(focus.x, y, z), animated: animated)
       return
     }
+    camera.usesOrthographicProjection = false
+    camera.fieldOfView = 36
     updateOrbitCamera(animated: animated)
   }
 
@@ -409,10 +417,12 @@ class BodyMap3DView: UIView {
     modelRoot.pivot = SCNMatrix4MakeTranslation(center.x, center.y, center.z)
 
     let radius = max(width, max(height, depth)) * 0.5
-    cameraDistance = max(2.8, radius * 3.1)
+    cameraDistance = max(2.95, radius * 3.35)
     minCameraDistance = max(1.8, radius * 1.8)
     maxCameraDistance = max(4.2, radius * 5.0)
-    focusNode.position = SCNVector3(0, max(0.06, height * 0.08), 0)
+    frontBackOrthographicScale = Double(max(2.0, height * 1.16))
+    frontBackVerticalOffset = max(0.05, height * 0.04)
+    focusNode.position = SCNVector3(0, max(0.03, height * 0.02), 0)
     orbitYaw = 0
     orbitPitch = -0.08
     cameraNode.camera?.fieldOfView = 36
@@ -694,12 +704,12 @@ class BodyMap3DView: UIView {
     }
 
     let tintStrength = selected
-      ? (0.34 + normalized * 0.18)
-      : (0.16 + normalized * 0.20)
+      ? (0.22 + normalized * 0.16)
+      : (0.10 + normalized * 0.14)
     let tintColor = blend(UIColor.white, color, t: tintStrength)
     let emissionAlpha = selected
-      ? (0.10 + normalized * 0.10)
-      : (0.02 + normalized * 0.05)
+      ? (0.04 + normalized * 0.06)
+      : (0.01 + normalized * 0.03)
 
     for material in geometry.materials {
       material.lightingModel = .physicallyBased
