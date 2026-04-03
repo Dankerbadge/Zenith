@@ -1,0 +1,20 @@
+{
+  "scenario_id": "S31-008",
+  "description": "Consent gates notifications/public actions and retention policy remains enforceable",
+  "status": "pass",
+  "observed": {
+    "consent_gated_actions": true,
+    "retention_enforced": true,
+    "notifications_enabled": false,
+    "consent_check_notes": "share_guard_enforced",
+    "retention_check_notes": "old_row_deleted=true"
+  },
+  "expected_outcomes": {
+    "consent_gated_actions": true,
+    "retention_enforced": true
+  },
+  "hard_gate_passed": true,
+  "owner": "Privacy Owner",
+  "notes": "e2e_run=true",
+  "executed_at": "2026-03-27T00:43:39.325Z"
+}

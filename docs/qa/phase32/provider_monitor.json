@@ -1,0 +1,68 @@
+{
+  "ok": true,
+  "generatedAt": "2026-04-03T02:15:39.893Z",
+  "mode": "standard",
+  "source": {
+    "phase31HardGatesPresent": true,
+    "phase31HardGatesOk": true
+  },
+  "totals": {
+    "metrics": 3,
+    "failing": 0,
+    "sev1": 3,
+    "sev2": 0
+  },
+  "metrics": [
+    {
+      "key": "provider_freshness_usda",
+      "label": "USDA Freshness (hours stale)",
+      "owner": "Data Eng",
+      "value": 6,
+      "target": 24,
+      "operator": "<=",
+      "source": "phase31_hard_gates_overall",
+      "synthetic": false,
+      "strictFailure": false,
+      "thresholdPass": true,
+      "pass": true,
+      "fastBurnRate": 3,
+      "slowBurnRate": 0.25,
+      "severity": "sev1",
+      "autoAction": "auto_halt_or_rollback"
+    },
+    {
+      "key": "provider_freshness_off",
+      "label": "OFF Freshness (hours stale)",
+      "owner": "Data Eng",
+      "value": 6,
+      "target": 24,
+      "operator": "<=",
+      "source": "phase31_hard_gates_overall",
+      "synthetic": false,
+      "strictFailure": false,
+      "thresholdPass": true,
+      "pass": true,
+      "fastBurnRate": 3,
+      "slowBurnRate": 0.25,
+      "severity": "sev1",
+      "autoAction": "auto_halt_or_rollback"
+    },
+    {
+      "key": "provider_freshness_restaurant",
+      "label": "Restaurant Freshness (hours stale)",
+      "owner": "Data Eng",
+      "value": 6,
+      "target": 24,
+      "operator": "<=",
+      "source": "phase31_hard_gates_overall",
+      "synthetic": false,
+      "strictFailure": false,
+      "thresholdPass": true,
+      "pass": true,
+      "fastBurnRate": 3,
+      "slowBurnRate": 0.25,
+      "severity": "sev1",
+      "autoAction": "auto_halt_or_rollback"
+    }
+  ]
+}

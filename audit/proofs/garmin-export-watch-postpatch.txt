@@ -1,0 +1,3 @@
+[garmin-watch] GARMIN_DEVELOPER_KEY_DER is required for export builds.
+[garmin-watch] Set GARMIN_DEVELOPER_KEY_DER to your Connect IQ developer key (.der) and rerun with GARMIN_BUILD_MODE=export.
+garmin_export_watch_exit=1

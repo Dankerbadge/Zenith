@@ -1,0 +1,20 @@
+{
+  "scenario_id": "S31-005",
+  "description": "Discovery and usual foods ranking returns stable top suggestions with parity checks",
+  "status": "pass",
+  "observed": {
+    "top_foods_correct": true,
+    "runtime_contract_ok": true,
+    "dual_read_parity": 0,
+    "discovery_check_notes": "usual_food_upsert_ok",
+    "runtime_check_notes": "runtime_contract_ok"
+  },
+  "expected_outcomes": {
+    "top_foods_correct": true,
+    "dual_read_parity": "<=0.1%"
+  },
+  "hard_gate_passed": true,
+  "owner": "QA",
+  "notes": "e2e_run=skipped_missing_env",
+  "executed_at": "2026-03-27T02:48:57.073Z"
+}

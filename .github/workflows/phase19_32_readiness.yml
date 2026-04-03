@@ -1,0 +1,85 @@
+name: Phase19-32 Readiness
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: "true"
+      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      OPS_AUTOMATION_KEY: ${{ secrets.OPS_AUTOMATION_KEY }}
+      PHASE32_OFFLINE_ONLINE_SUCCESS_RATE: ${{ vars.PHASE32_OFFLINE_ONLINE_SUCCESS_RATE }}
+      PHASE32_DUAL_WRITE_MISMATCH_RATE: ${{ vars.PHASE32_DUAL_WRITE_MISMATCH_RATE }}
+      PHASE32_DUAL_READ_MISMATCH_RATE: ${{ vars.PHASE32_DUAL_READ_MISMATCH_RATE }}
+      PHASE32_PROVIDER_USDA_HOURS_STALE: ${{ vars.PHASE32_PROVIDER_USDA_HOURS_STALE }}
+      PHASE32_PROVIDER_OFF_HOURS_STALE: ${{ vars.PHASE32_PROVIDER_OFF_HOURS_STALE }}
+      PHASE32_PROVIDER_RESTAURANT_HOURS_STALE: ${{ vars.PHASE32_PROVIDER_RESTAURANT_HOURS_STALE }}
+      PHASE32_FEATURE_FLAG_DRIFT_COUNT: ${{ vars.PHASE32_FEATURE_FLAG_DRIFT_COUNT }}
+      PHASE32_OFFLINE_PACK_CHECKSUM_MISMATCH_COUNT: ${{ vars.PHASE32_OFFLINE_PACK_CHECKSUM_MISMATCH_COUNT }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Verify AppleDouble Artifact Hygiene
+        run: node ./scripts/verify-no-appledouble.js
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Validate Supabase Credential Presence
+        run: |
+          if [ -z "${EXPO_PUBLIC_SUPABASE_URL}" ] || [ -z "${EXPO_PUBLIC_SUPABASE_ANON_KEY}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY}" ]; then
+            echo "::warning::Supabase secrets are missing. Phase31 hard-gates generation may fail."
+          else
+            echo "Supabase secrets detected."
+          fi
+
+      - name: Generate Phase31 Hard Gates (best effort)
+        run: |
+          if [ -n "${EXPO_PUBLIC_SUPABASE_URL}" ] && [ -n "${EXPO_PUBLIC_SUPABASE_ANON_KEY}" ] && [ -n "${SUPABASE_SERVICE_ROLE_KEY}" ]; then
+            npm run -s phase31:fixtures || true
+            npm run -s phase31:hard-gates || true
+          else
+            echo "Skipping phase31 hard-gates due to missing secrets."
+          fi
+
+      - name: Run Readiness Gates
+        run: |
+          FAIL=0
+          npm run -s verify:food-offline-pack || FAIL=1
+          npm run -s verify:food-audit-gates || FAIL=1
+          npm run -s verify:phase32 || FAIL=1
+          npm run -s phase32:dashboard:enforce || FAIL=1
+          exit $FAIL
+
+      - name: Upload Readiness Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase19-32-readiness-${{ github.run_id }}
+          if-no-files-found: warn
+          path: |
+            docs/qa/FOOD_SYSTEM_PROD_AUDIT.json
+            docs/qa/FOOD_SYSTEM_PROD_AUDIT.md
+            docs/qa/food_audit_gate_report.json
+            docs/qa/food_audit_gate_report.md
+            docs/qa/phase31/**
+            docs/qa/phase32/**

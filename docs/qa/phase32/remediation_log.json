@@ -1,0 +1,76 @@
+{
+  "ok": true,
+  "generatedAt": "2026-03-27T02:48:57.507Z",
+  "mode": "strict",
+  "source": {
+    "anomalyReportPresent": true,
+    "anomalyCount": 4
+  },
+  "totals": {
+    "actions": 4,
+    "applied": 4,
+    "skipped": 0
+  },
+  "actions": [
+    {
+      "actionId": "dual_write_parity:1774579737506",
+      "metricKey": "dual_write_parity",
+      "scenarioKey": "dual_write_mismatch_spike",
+      "severity": "sev1",
+      "owner": "Backend Eng",
+      "action": "replay_or_quarantine_logs",
+      "status": "simulated_applied",
+      "createdAt": "2026-03-27T02:48:57.506Z",
+      "audit": {
+        "source": "phase32-remediation",
+        "reason": "Dual-write mismatch spike",
+        "synthetic": true
+      }
+    },
+    {
+      "actionId": "offline_online_parity:1774579737507",
+      "metricKey": "offline_online_parity",
+      "scenarioKey": "offline_online_success_drop",
+      "severity": "sev1",
+      "owner": "QA / Sync Eng",
+      "action": "retry_sync_queue_batches",
+      "status": "simulated_applied",
+      "createdAt": "2026-03-27T02:48:57.507Z",
+      "audit": {
+        "source": "phase32-remediation",
+        "reason": "Offline -> online parity drop",
+        "synthetic": true
+      }
+    },
+    {
+      "actionId": "provider_freshness_off:1774579737507",
+      "metricKey": "provider_freshness_off",
+      "scenarioKey": "provider_freshness_off_stale",
+      "severity": "sev1",
+      "owner": "Data Eng",
+      "action": "force_provider_refresh_off",
+      "status": "simulated_applied",
+      "createdAt": "2026-03-27T02:48:57.507Z",
+      "audit": {
+        "source": "phase32-remediation",
+        "reason": "OFF provider stale",
+        "synthetic": true
+      }
+    },
+    {
+      "actionId": "offline_pack_integrity:1774579737507",
+      "metricKey": "offline_pack_integrity",
+      "scenarioKey": "offline_pack_checksum_mismatch",
+      "severity": "sev1",
+      "owner": "DevOps",
+      "action": "rebuild_offline_pack_artifact",
+      "status": "simulated_applied",
+      "createdAt": "2026-03-27T02:48:57.507Z",
+      "audit": {
+        "source": "phase32-remediation",
+        "reason": "Offline pack checksum mismatch",
+        "synthetic": true
+      }
+    }
+  ]
+}

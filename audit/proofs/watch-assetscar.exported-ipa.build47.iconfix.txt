@@ -1,0 +1,1 @@
+-rw-r--r--@ 1 dankerbadge  staff   111K Feb 10 09:35 ios/build/export-appstore-1.0.1-47.iconfix/unzipped/Payload/Zenith.app/Watch/ZenithWatch Watch App.app/Assets.car

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 3,
+  "protocolVersion": 2,
+  "datasetVersion": "2026.03.26",
+  "generatedAt": "2026-03-26T00:00:00.000Z",
+  "files": {
+    "database": "food_offline_pack.sqlite",
+    "attribution": "attribution.json",
+    "checksums": "checksums.json"
+  },
+  "compatibility": {
+    "minAppVersion": "3.8.0",
+    "minPackSchemaVersion": 2,
+    "maxPackSchemaVersion": 3,
+    "minSyncProtocolVersion": 1,
+    "maxSyncProtocolVersion": 2
+  }
+}

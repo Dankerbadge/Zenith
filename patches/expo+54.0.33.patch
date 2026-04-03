@@ -1,0 +1,33 @@
+diff --git a/node_modules/expo/ios/AppDelegates/ExpoAppDelegate.swift b/node_modules/expo/ios/AppDelegates/ExpoAppDelegate.swift
+index ab95b08..9787c6e 100644
+--- a/node_modules/expo/ios/AppDelegates/ExpoAppDelegate.swift
++++ b/node_modules/expo/ios/AppDelegates/ExpoAppDelegate.swift
+@@ -2,6 +2,9 @@ import Dispatch
+ import Foundation
+ import ExpoModulesCore
+ import ReactAppDependencyProvider
++#if canImport(React)
++import React
++#endif
+ 
+ /**
+  Note: you cannot subclass Swift from Objective-C, use EXAppDelegateWrapper with Obj-C app delegates
+diff --git a/node_modules/expo/ios/AppDelegates/RCTAppDelegateUmbrella.h b/node_modules/expo/ios/AppDelegates/RCTAppDelegateUmbrella.h
+index ce95b5a..bd8e1cb 100644
+--- a/node_modules/expo/ios/AppDelegates/RCTAppDelegateUmbrella.h
++++ b/node_modules/expo/ios/AppDelegates/RCTAppDelegateUmbrella.h
+@@ -16,8 +16,13 @@
+ 
+ #if __has_include(<React_RCTAppDelegate/React-RCTAppDelegate-umbrella.h>)
+ #import <React_RCTAppDelegate/React-RCTAppDelegate-umbrella.h>
+-#else
++#elif __has_include(<React_RCTAppDelegate/React_RCTAppDelegate-umbrella.h>)
+ #import <React_RCTAppDelegate/React_RCTAppDelegate-umbrella.h>
++#elif __has_include(<React/React_RCTAppDelegate/React_RCTAppDelegate-umbrella.h>)
++// Some builds (notably with React-Core-prebuilt) expose this umbrella header only under the main React framework.
++#import <React/React_RCTAppDelegate/React_RCTAppDelegate-umbrella.h>
++#else
++#error Could not locate React-RCTAppDelegate umbrella header (React_RCTAppDelegate-umbrella.h)
+ #endif
+ 
+ 

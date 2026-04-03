@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Support | Zenith</title>
+  <meta name="description" content="Support hub with live search and guided troubleshooting flows." />
+  <meta property="og:title" content="Support | Zenith" />
+  <meta property="og:description" content="Get help fast with clear next steps." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://zenithfit.app/support" />
+  <link rel="canonical" href="https://zenithfit.app/support" />
+  <link rel="stylesheet" href="/assets/site.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="bg-orb a"></div>
+  <div class="bg-orb b"></div>
+  <div class="bg-orb c"></div>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="/">Zenith Fitness</a>
+      <nav class="nav-desktop" aria-label="Primary">
+        <a href="/product">Product</a><a href="/features">Features</a><a href="/wearables">Wearables</a><a href="/support">Support</a><a href="/privacy">Privacy</a>
+        <a class="nav-download" href="/download" data-event="download_click" data-label="header_download">Download</a>
+      </nav>
+      <button class="nav-mobile-toggle" data-mobile-toggle aria-expanded="false" aria-controls="mobile-nav">Menu</button>
+    </div>
+    <nav id="mobile-nav" class="nav-mobile" data-mobile-nav aria-label="Mobile primary">
+      <a href="/product">Product</a><a href="/features">Features</a><a href="/wearables">Wearables</a><a href="/support">Support</a><a href="/privacy">Privacy</a><a href="/status">Status</a>
+      <a href="/download" data-event="download_click" data-label="mobile_download">Download</a>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <section class="section section-intro reveal">
+      <div class="section-header">
+        <h2>Support</h2>
+        <p>Most issues are fixable in a few steps. Start with search, then use guided flows.</p>
+      </div>
+
+      <div class="search-panel sticky-search mt-16">
+        <div class="search-wrap">
+          <input type="text" data-support-search placeholder="Search support articles" aria-label="Search support articles" />
+          <div data-support-suggestions class="search-suggestions" aria-live="polite"></div>
+          <div data-support-results class="search-results" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <nav class="support-quicklinks" aria-label="Support quick links">
+        <a href="/support/getting-started">Start here</a>
+        <a href="/support/troubleshooting#gps-flow">GPS flow</a>
+        <a href="/support/subscription#restore">Restore purchases</a>
+        <a href="/support/account">Account help</a>
+        <a href="/contact">Contact support</a>
+      </nav>
+
+      <script type="application/json" id="support-index-json">[
+        {"title":"Getting started","href":"/support/getting-started","desc":"Set up account, goals, and your first logs.","tags":["new user","setup","onboarding"]},
+        {"title":"GPS not tracking accurately","href":"/support/troubleshooting#gps-flow","desc":"Guided flow to diagnose GPS issues.","tags":["gps","running","location"]},
+        {"title":"Subscription not recognized","href":"/support/troubleshooting#billing-flow","desc":"Restore purchase and entitlement checks.","tags":["subscription","billing","restore"]},
+        {"title":"Watch not syncing","href":"/support/troubleshooting#watch-flow","desc":"Connection and sync troubleshooting steps.","tags":["watch","wearables","sync"]},
+        {"title":"Account help","href":"/support/account","desc":"Login, email update, and account deletion.","tags":["account","login","password"]},
+        {"title":"Subscription help","href":"/support/subscription","desc":"Manage subscription and billing issues.","tags":["billing","purchase","subscription"]},
+        {"title":"Wearables status","href":"/wearables","desc":"Top-level status page for Apple Watch, Garmin, and Android planning.","tags":["wearables","apple watch","garmin","android"]},
+        {"title":"Wearables overview","href":"/support/wearables","desc":"Current wearable support and status.","tags":["wearables","apple watch","garmin"]},
+        {"title":"Apple Watch status","href":"/support/wearables/apple-watch","desc":"Current Apple Watch integration availability and scope.","tags":["wearables","apple watch","status"]},
+        {"title":"Garmin status","href":"/support/wearables/garmin","desc":"Current Garmin Connect IQ integration availability and scope.","tags":["wearables","garmin","status"]},
+        {"title":"Release notes","href":"/releases","desc":"Versioned list of support-impacting changes.","tags":["releases","updates","changelog"]},
+        {"title":"Privacy and permissions","href":"/data-permissions","desc":"Why each permission is requested.","tags":["privacy","permissions","data"]}
+      ]</script>
+
+      <div class="grid-3 support-grid mt-18">
+        <a class="card" href="/support/getting-started"><h3>Getting Started</h3><p>First setup and first-week flow.</p></a>
+        <a class="card" href="/support/troubleshooting"><h3>Troubleshooting</h3><p>Guided steps for GPS, billing, and wearable sync.</p></a>
+        <a class="card" href="/support/account"><h3>Account</h3><p>Login, email changes, and deletion support.</p></a>
+        <a class="card" href="/support/subscription"><h3>Subscription & Billing</h3><p>Restore access and entitlement checks.</p></a>
+        <a class="card" href="/support/wearables"><h3>Wearables</h3><p>Apple Watch and Garmin status with clear boundaries.</p></a>
+        <a class="card" href="/contact"><h3>Contact</h3><p>Email support with expected response window.</p></a>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>© 2026 Zenith Fitness · Built for calm consistency.</div>
+      <div class="footer-links">
+        <a href="/about">About</a>
+        <a href="/wearables">Wearables</a>
+        <a href="/roadmap">Roadmap</a>
+        <a href="/releases">Releases</a>
+        <a href="/contact">Contact</a>
+        <a href="/terms">Terms</a>
+        <a href="/privacy-policy">Privacy Policy</a>
+        <a href="/data-permissions">Data & Permissions</a>
+        <a href="/cookies">Cookies</a>
+        <a href="/status">Status</a>
+      </div>
+    </footer>
+  </main>
+
+  <script src="/assets/site.js" defer></script>
+</body>
+</html>

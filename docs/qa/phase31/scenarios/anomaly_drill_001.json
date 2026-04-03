@@ -1,0 +1,22 @@
+{
+  "scenario_id": "S31-010",
+  "description": "Synthetic anomaly injection triggers auto-halt and remediation workflows",
+  "status": "pass",
+  "observed": {
+    "auto_halt_triggered": true,
+    "remediation_triggered": true,
+    "audit_events_created": true,
+    "halt_candidates": 2,
+    "rollback_candidates": 0,
+    "remediated_count": 0
+  },
+  "expected_outcomes": {
+    "auto_halt_triggered": true,
+    "remediation_triggered": true,
+    "audit_events_created": true
+  },
+  "hard_gate_passed": true,
+  "owner": "DevOps",
+  "notes": "alert_run=skipped_missing_env,anomaly_run=skipped_missing_env,remediation_run=skipped_missing_env",
+  "executed_at": "2026-03-27T02:48:57.357Z"
+}

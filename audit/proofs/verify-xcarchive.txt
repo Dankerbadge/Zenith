@@ -1,0 +1,1 @@
+Usage: node scripts/verify-xcarchive.js /path/to/Zenith.xcarchive

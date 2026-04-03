@@ -1,0 +1,17 @@
+{
+  "scenario_id": "S31-004",
+  "description": "Goal-aware logging updates progress and reflects active goals in downstream suggestions",
+  "critical_paths": ["logging", "discovery"],
+  "flags": ["FF_GOAL_AWARE_LOGGING_ENABLED", "FF_GOAL_AWARE_DISCOVERY_ENABLED"],
+  "client_versions": ["latest"],
+  "offline_states": [false, true],
+  "expected_outcomes": {
+    "goal_totals_updated": true,
+    "goal_reflection_in_discovery": true
+  },
+  "report_paths": {
+    "json": "docs/qa/phase31/scenarios/goal_e2e_001.json",
+    "md": "docs/qa/phase31/scenarios/goal_e2e_001.md"
+  },
+  "owner": "QA"
+}

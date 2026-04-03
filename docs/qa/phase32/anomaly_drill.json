@@ -1,0 +1,69 @@
+{
+  "ok": true,
+  "generatedAt": "2026-03-27T02:48:57.476Z",
+  "injectedScenarios": [],
+  "totals": {
+    "scenarios": 4,
+    "sev1": 4,
+    "sev2": 0,
+    "untriggered": 0
+  },
+  "anomalies": [
+    {
+      "scenarioKey": "dual_write_mismatch_spike",
+      "metricKey": "dual_write_parity",
+      "label": "Dual-write mismatch spike",
+      "owner": "Backend Eng",
+      "observed": 1.2,
+      "target": 0.1,
+      "severity": "sev1",
+      "autoAction": "auto_halt_or_rollback",
+      "fastBurnRate": 144,
+      "slowBurnRate": 12,
+      "thresholdPass": false,
+      "triggered": true
+    },
+    {
+      "scenarioKey": "offline_online_success_drop",
+      "metricKey": "offline_online_parity",
+      "label": "Offline -> online parity drop",
+      "owner": "QA / Sync Eng",
+      "observed": 95.8,
+      "target": 99.5,
+      "severity": "sev1",
+      "autoAction": "auto_halt_or_rollback",
+      "fastBurnRate": 100.8,
+      "slowBurnRate": 8.4,
+      "thresholdPass": false,
+      "triggered": true
+    },
+    {
+      "scenarioKey": "provider_freshness_off_stale",
+      "metricKey": "provider_freshness_off",
+      "label": "OFF provider stale",
+      "owner": "Data Eng",
+      "observed": 72,
+      "target": 24,
+      "severity": "sev1",
+      "autoAction": "auto_halt_or_rollback",
+      "fastBurnRate": 36,
+      "slowBurnRate": 3,
+      "thresholdPass": false,
+      "triggered": true
+    },
+    {
+      "scenarioKey": "offline_pack_checksum_mismatch",
+      "metricKey": "offline_pack_integrity",
+      "label": "Offline pack checksum mismatch",
+      "owner": "DevOps",
+      "observed": 3,
+      "target": 0,
+      "severity": "sev1",
+      "autoAction": "auto_halt_or_rollback",
+      "fastBurnRate": 12000,
+      "slowBurnRate": 1000,
+      "thresholdPass": false,
+      "triggered": true
+    }
+  ]
+}

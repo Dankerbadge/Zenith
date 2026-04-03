@@ -1,0 +1,327 @@
+{
+  "meta": {
+    "title": "Food System Production Audit - End-to-End",
+    "generatedAt": "2026-03-26T00:00:00Z",
+    "scope": "Phases 19-31",
+    "sourceOfTruth": "Code-backed audit findings in workspace"
+  },
+  "legend": {
+    "verified": "Fully implemented and evidenced in runtime code",
+    "partial": "Implemented in part, incomplete integration/coverage",
+    "missing": "Not built or only simulated/scaffolded"
+  },
+  "summary": {
+    "food_logging": "partial",
+    "search_engine": "partial",
+    "offline_sync": "missing",
+    "privacy_consent": "partial",
+    "export_import": "partial",
+    "admin_operations": "partial",
+    "release_ops_hardening": "partial",
+    "assets_ui": "partial"
+  },
+  "sections": [
+    {
+      "key": "food_logging",
+      "status": "partial",
+      "features": [
+        {
+          "name": "Local snapshot logging",
+          "status": "verified",
+          "criticality": "high",
+          "owner": "Backend Eng",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/utils/foodSearchService.ts:1922",
+            "/Users/dankerbadge/Desktop/Zenith/utils/storageUtils.ts:403"
+          ],
+          "nextSteps": []
+        },
+        {
+          "name": "Immutable server v2 log write path",
+          "status": "verified",
+          "criticality": "high",
+          "owner": "Backend Eng",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/supabase/functions/food-log-v2-write/index.ts",
+            "/Users/dankerbadge/Desktop/Zenith/supabase/migrations/20260326304000_food_v2_immutable_log_and_parity.sql",
+            "/Users/dankerbadge/Desktop/Zenith/utils/cloudStateSync.ts"
+          ],
+          "nextSteps": []
+        },
+        {
+          "name": "Dual-read/dual-write parity in runtime",
+          "status": "verified",
+          "criticality": "high",
+          "owner": "Backend Eng",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/utils/cloudStateSync.ts",
+            "/Users/dankerbadge/Desktop/Zenith/supabase/migrations/20260326304000_food_v2_immutable_log_and_parity.sql",
+            "/Users/dankerbadge/Desktop/Zenith/scripts/phase31-e2e-check.js"
+          ],
+          "nextSteps": []
+        }
+      ]
+    },
+    {
+      "key": "search_engine",
+      "status": "partial",
+      "features": [
+        {
+          "name": "USDA + OFF search and ranking pipeline",
+          "status": "verified",
+          "criticality": "high",
+          "owner": "Search Backend",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/supabase/functions/food-search/index.ts:863",
+            "/Users/dankerbadge/Desktop/Zenith/utils/foodSearchService.ts:1488"
+          ],
+          "nextSteps": []
+        },
+        {
+          "name": "Restaurant provider support",
+          "status": "verified",
+          "criticality": "high",
+          "owner": "Search Backend",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/supabase/functions/food-search/index.ts:11"
+          ],
+          "nextSteps": []
+        },
+        {
+          "name": "Attribution/disclaimer payload propagation",
+          "status": "partial",
+          "criticality": "medium",
+          "owner": "Privacy Owner",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/supabase/functions/food-search/index.ts:938"
+          ],
+          "nextSteps": [
+            "Return provider-level attributions/disclaimers in search and details payload contracts."
+          ]
+        }
+      ]
+    },
+    {
+      "key": "offline_sync",
+      "status": "missing",
+      "features": [
+        {
+          "name": "Offline pack (SQLite + manifest + attribution files)",
+          "status": "verified",
+          "criticality": "high",
+          "owner": "Mobile Infra",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/scripts/build-food-offline-pack.js",
+            "/Users/dankerbadge/Desktop/Zenith/utils/offlineFoodPackService.ts",
+            "/Users/dankerbadge/Desktop/Zenith/assets/food/offline-pack/manifest.json"
+          ],
+          "nextSteps": []
+        },
+        {
+          "name": "Sync protocol version negotiation",
+          "status": "verified",
+          "criticality": "high",
+          "owner": "Backend Eng",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/supabase/functions/runtime-config/index.ts",
+            "/Users/dankerbadge/Desktop/Zenith/supabase/migrations/20260326235500_runtime_config_release_schema.sql"
+          ],
+          "nextSteps": []
+        }
+      ]
+    },
+    {
+      "key": "privacy_consent",
+      "status": "partial",
+      "features": [
+        {
+          "name": "Consent and privacy schema + edge functions",
+          "status": "verified",
+          "criticality": "high",
+          "owner": "Privacy Owner",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/supabase/migrations/20260325183000_phase29_privacy_consent_policy_hardening.sql:7",
+            "/Users/dankerbadge/Desktop/Zenith/supabase/functions/privacy-consent/index.ts:25"
+          ],
+          "nextSteps": []
+        },
+        {
+          "name": "Privacy UI integration",
+          "status": "missing",
+          "criticality": "medium",
+          "owner": "Mobile",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/utils/privacyService.ts:94"
+          ],
+          "nextSteps": [
+            "Wire consent/public share/data-explanation screens to privacyService."
+          ]
+        },
+        {
+          "name": "No-guilt notification language policy",
+          "status": "verified",
+          "criticality": "high",
+          "owner": "Product + Mobile",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/utils/notificationService.ts:191",
+            "/Users/dankerbadge/Desktop/Zenith/utils/notificationService.ts:429"
+          ],
+          "nextSteps": []
+        }
+      ]
+    },
+    {
+      "key": "export_import",
+      "status": "partial",
+      "features": [
+        {
+          "name": "Basic export",
+          "status": "verified",
+          "criticality": "medium",
+          "owner": "Data Eng",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/supabase/functions/export-nutrition/index.ts:67",
+            "/Users/dankerbadge/Desktop/Zenith/utils/dataPortabilityService.ts:26"
+          ],
+          "nextSteps": []
+        },
+        {
+          "name": "Restore-grade import and portability jobs",
+          "status": "verified",
+          "criticality": "high",
+          "owner": "Data Eng",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/supabase/functions/portability-import/index.ts",
+            "/Users/dankerbadge/Desktop/Zenith/supabase/migrations/20260326301000_food_portability_jobs.sql",
+            "/Users/dankerbadge/Desktop/Zenith/supabase/functions/export-nutrition/index.ts"
+          ],
+          "nextSteps": []
+        }
+      ]
+    },
+    {
+      "key": "admin_operations",
+      "status": "partial",
+      "features": [
+        {
+          "name": "Ops alert primitives",
+          "status": "verified",
+          "criticality": "medium",
+          "owner": "Ops",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/supabase/migrations/20260211090000_backend_ops_automation_p0.sql:19"
+          ],
+          "nextSteps": []
+        },
+        {
+          "name": "Admin RBAC + break-glass + queue model",
+          "status": "verified",
+          "criticality": "high",
+          "owner": "Backend Ops",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/supabase/migrations/20260326312000_food_admin_rbac_break_glass_queue.sql",
+            "/Users/dankerbadge/Desktop/Zenith/supabase/functions/admin-ops-control/index.ts",
+            "/Users/dankerbadge/Desktop/Zenith/scripts/phase31/scenarios/run-canary-rollout.js"
+          ],
+          "nextSteps": []
+        }
+      ]
+    },
+    {
+      "key": "release_ops_hardening",
+      "status": "partial",
+      "features": [
+        {
+          "name": "Phase30/31 scripts and playbooks",
+          "status": "verified",
+          "criticality": "medium",
+          "owner": "QA/SRE",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/docs/qa/PHASE30_UNIFIED_QA_PLAYBOOK.md",
+            "/Users/dankerbadge/Desktop/Zenith/docs/qa/phase31/PHASE31_PRODUCTION_OPS_PLAYBOOK.md"
+          ],
+          "nextSteps": []
+        },
+        {
+          "name": "Runtime compatibility endpoint and release schema",
+          "status": "verified",
+          "criticality": "high",
+          "owner": "Release Eng",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/supabase/functions/runtime-config/index.ts",
+            "/Users/dankerbadge/Desktop/Zenith/supabase/migrations/20260326235500_runtime_config_release_schema.sql"
+          ],
+          "nextSteps": []
+        },
+        {
+          "name": "SLO/anomaly automation realism",
+          "status": "verified",
+          "criticality": "high",
+          "owner": "SRE",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/scripts/phase31-slo-check.js:38",
+            "/Users/dankerbadge/Desktop/Zenith/scripts/phase30-canary-rollback-drill.js:36"
+          ],
+          "nextSteps": []
+        }
+      ]
+    },
+    {
+      "key": "assets_ui",
+      "status": "partial",
+      "features": [
+        {
+          "name": "Static asset checks",
+          "status": "verified",
+          "criticality": "low",
+          "owner": "QA",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/scripts/verify-store-pack.js:42"
+          ],
+          "nextSteps": []
+        },
+        {
+          "name": "Food offline pack assets",
+          "status": "verified",
+          "criticality": "high",
+          "owner": "Mobile Infra",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/assets/food/offline-pack/food_offline_pack.sqlite",
+            "/Users/dankerbadge/Desktop/Zenith/assets/food/offline-pack/checksums.json",
+            "/Users/dankerbadge/Desktop/Zenith/scripts/verify-food-offline-pack.js"
+          ],
+          "nextSteps": []
+        },
+        {
+          "name": "Repo hygiene for AppleDouble files",
+          "status": "partial",
+          "criticality": "low",
+          "owner": "Mobile",
+          "evidence": [
+            "/Users/dankerbadge/Desktop/Zenith/assets/images/._icon.png"
+          ],
+          "nextSteps": [
+            "Remove `._*` artifacts and add exclusion guard."
+          ]
+        }
+      ]
+    }
+  ],
+  "blockingGaps": [
+    "Missing runtime-config endpoint and compatibility negotiation",
+    "No production-grade offline pack architecture",
+    "No dedicated immutable v2 server log write model with protocol-versioned sync",
+    "Import/restore backend not implemented to full portability scope",
+    "Admin RBAC/break-glass/queue model not implemented"
+  ],
+  "executionNotes": {
+    "assetChecks": {
+      "phase30Assets": "pass",
+      "phase31Assets": "pass"
+    },
+    "integrationChecks": {
+      "phase30Matrix": "failed_missing_env_SUPABASE_SERVICE_ROLE_KEY",
+      "phase31E2E": "failed_missing_env_SUPABASE_SERVICE_ROLE_KEY"
+    }
+  }
+}

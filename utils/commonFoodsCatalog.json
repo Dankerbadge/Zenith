@@ -1,0 +1,567 @@
+[
+  {
+    "id": "zenith-common:egg-whole",
+    "name": "Egg, whole (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["egg", "eggs", "whole egg", "large egg"],
+    "categoryTags": ["protein", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 143, "proteinG": 13, "carbsG": 1, "fatG": 10 },
+    "servingSizes": [
+      { "label": "1 large egg", "grams": 50, "default": true },
+      { "label": "100g", "grams": 100 }
+    ]
+  },
+  {
+    "id": "zenith-common:egg-whites",
+    "name": "Egg whites (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["egg white", "egg whites"],
+    "categoryTags": ["protein", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 52, "proteinG": 11, "carbsG": 1, "fatG": 0 },
+    "servingSizes": [
+      { "label": "100g", "grams": 100, "default": true },
+      { "label": "1 cup", "grams": 243 }
+    ]
+  },
+  {
+    "id": "zenith-common:egg-scrambled",
+    "name": "Scrambled eggs (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["scrambled egg", "scrambled eggs", "egg scramble"],
+    "categoryTags": ["protein", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 148, "proteinG": 10, "carbsG": 2, "fatG": 11 },
+    "servingSizes": [
+      { "label": "100g", "grams": 100, "default": true }
+    ]
+  },
+  {
+    "id": "zenith-common:egg-boiled",
+    "name": "Hard boiled egg (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["boiled egg", "boiled eggs", "hard boiled", "hard boiled egg", "hard boiled eggs"],
+    "categoryTags": ["protein", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 143, "proteinG": 13, "carbsG": 1, "fatG": 10 },
+    "servingSizes": [
+      { "label": "1 large egg", "grams": 50, "default": true },
+      { "label": "100g", "grams": 100 }
+    ]
+  },
+
+  {
+    "id": "zenith-common:ground-beef-90-10",
+    "name": "Ground beef 90/10 (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["beef", "ground beef", "hamburger meat", "lean ground beef", "90/10"],
+    "categoryTags": ["protein"],
+    "nutrientsPer100": { "caloriesKcal": 176, "proteinG": 20, "carbsG": 0, "fatG": 10 },
+    "servingSizes": [
+      { "label": "100g", "grams": 100, "default": true },
+      { "label": "4 oz", "grams": 113.4 }
+    ]
+  },
+  {
+    "id": "zenith-common:ground-beef-85-15",
+    "name": "Ground beef 85/15 (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["beef", "ground beef", "hamburger meat", "85/15"],
+    "categoryTags": ["protein"],
+    "nutrientsPer100": { "caloriesKcal": 215, "proteinG": 19, "carbsG": 0, "fatG": 15 },
+    "servingSizes": [
+      { "label": "100g", "grams": 100, "default": true },
+      { "label": "4 oz", "grams": 113.4 }
+    ]
+  },
+  {
+    "id": "zenith-common:steak",
+    "name": "Steak (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["beef", "steak", "sirloin", "ribeye"],
+    "categoryTags": ["protein"],
+    "nutrientsPer100": { "caloriesKcal": 250, "proteinG": 26, "carbsG": 0, "fatG": 17 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+  {
+    "id": "zenith-common:beef-roast",
+    "name": "Beef roast (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["beef", "roast", "beef roast"],
+    "categoryTags": ["protein"],
+    "nutrientsPer100": { "caloriesKcal": 240, "proteinG": 26, "carbsG": 0, "fatG": 15 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+
+  {
+    "id": "zenith-common:chicken-breast-cooked",
+    "name": "Chicken breast, cooked (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["chicken", "chicken breast", "breast", "cooked chicken breast", "grilled chicken breast"],
+    "categoryTags": ["protein", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 165, "proteinG": 31, "carbsG": 0, "fatG": 4 },
+    "servingSizes": [
+      { "label": "100g", "grams": 100, "default": true },
+      { "label": "4 oz", "grams": 113.4 }
+    ]
+  },
+  {
+    "id": "zenith-common:chicken-thigh-cooked",
+    "name": "Chicken thigh, cooked (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["chicken", "chicken thigh", "thigh", "cooked chicken thigh"],
+    "categoryTags": ["protein"],
+    "nutrientsPer100": { "caloriesKcal": 209, "proteinG": 26, "carbsG": 0, "fatG": 11 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+
+  {
+    "id": "zenith-common:ground-turkey",
+    "name": "Ground turkey (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["turkey", "ground turkey"],
+    "categoryTags": ["protein"],
+    "nutrientsPer100": { "caloriesKcal": 170, "proteinG": 22, "carbsG": 0, "fatG": 9 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+  {
+    "id": "zenith-common:turkey-breast",
+    "name": "Turkey breast (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["turkey", "turkey breast"],
+    "categoryTags": ["protein"],
+    "nutrientsPer100": { "caloriesKcal": 135, "proteinG": 29, "carbsG": 0, "fatG": 1 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+
+  {
+    "id": "zenith-common:salmon",
+    "name": "Salmon (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["salmon", "fish", "fatty fish"],
+    "categoryTags": ["protein"],
+    "nutrientsPer100": { "caloriesKcal": 208, "proteinG": 20, "carbsG": 0, "fatG": 13 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+  {
+    "id": "zenith-common:tuna",
+    "name": "Tuna (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["tuna", "fish", "canned tuna"],
+    "categoryTags": ["protein", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 116, "proteinG": 26, "carbsG": 0, "fatG": 1 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+  {
+    "id": "zenith-common:white-fish",
+    "name": "White fish (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["white fish", "cod", "tilapia", "fish"],
+    "categoryTags": ["protein"],
+    "nutrientsPer100": { "caloriesKcal": 105, "proteinG": 23, "carbsG": 0, "fatG": 1 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+
+  {
+    "id": "zenith-common:rice-white-cooked",
+    "name": "White rice, cooked (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["rice", "white rice", "cooked rice"],
+    "categoryTags": ["carb", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 130, "proteinG": 2.7, "carbsG": 28.6, "fatG": 0.3 },
+    "servingSizes": [
+      { "label": "100g", "grams": 100, "default": true },
+      { "label": "1 cup", "grams": 158 }
+    ]
+  },
+  {
+    "id": "zenith-common:rice-brown-cooked",
+    "name": "Brown rice, cooked (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["rice", "brown rice", "cooked brown rice"],
+    "categoryTags": ["carb", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 111, "proteinG": 2.6, "carbsG": 23, "fatG": 0.9, "fiberG": 1.8 },
+    "servingSizes": [
+      { "label": "100g", "grams": 100, "default": true },
+      { "label": "1 cup", "grams": 195 }
+    ]
+  },
+
+  {
+    "id": "zenith-common:pasta-cooked",
+    "name": "Pasta, cooked (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["pasta", "cooked pasta", "spaghetti", "noodles"],
+    "categoryTags": ["carb", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 158, "proteinG": 5.8, "carbsG": 30.9, "fatG": 0.9, "fiberG": 1.8 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+
+  {
+    "id": "zenith-common:bread-slice",
+    "name": "Bread slice (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["bread", "slice of bread", "bread slice"],
+    "categoryTags": ["carb", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 265, "proteinG": 9, "carbsG": 49, "fatG": 3.2, "fiberG": 2.4 },
+    "servingSizes": [
+      { "label": "1 slice", "grams": 25, "default": true },
+      { "label": "100g", "grams": 100 }
+    ]
+  },
+  {
+    "id": "zenith-common:bagel",
+    "name": "Bagel (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["bagel"],
+    "categoryTags": ["carb", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 250, "proteinG": 10, "carbsG": 48, "fatG": 1.5, "fiberG": 2 },
+    "servingSizes": [{ "label": "1 bagel", "grams": 95, "default": true }]
+  },
+  {
+    "id": "zenith-common:tortilla",
+    "name": "Tortilla (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["tortilla", "wrap"],
+    "categoryTags": ["carb", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 313, "proteinG": 8, "carbsG": 52, "fatG": 8, "fiberG": 3 },
+    "servingSizes": [{ "label": "1 tortilla", "grams": 50, "default": true }]
+  },
+
+  {
+    "id": "zenith-common:oats-dry",
+    "name": "Oats, dry (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["oat", "oats", "dry oats", "rolled oats"],
+    "categoryTags": ["carb", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 389, "proteinG": 16.9, "carbsG": 66.3, "fatG": 6.9, "fiberG": 10.6 },
+    "servingSizes": [
+      { "label": "100g", "grams": 100, "default": true },
+      { "label": "1/2 cup", "grams": 40 }
+    ]
+  },
+  {
+    "id": "zenith-common:oatmeal-cooked",
+    "name": "Oatmeal, cooked (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["oatmeal", "cooked oatmeal", "cooked oats", "porridge"],
+    "categoryTags": ["carb", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 71, "proteinG": 2.5, "carbsG": 12, "fatG": 1.4, "fiberG": 1.7 },
+    "servingSizes": [
+      { "label": "100g", "grams": 100, "default": true },
+      { "label": "1 cup", "grams": 234 }
+    ]
+  },
+
+  {
+    "id": "zenith-common:potato-baked",
+    "name": "Potato, baked (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["potato", "baked potato"],
+    "categoryTags": ["carb"],
+    "nutrientsPer100": { "caloriesKcal": 93, "proteinG": 2.5, "carbsG": 21, "fatG": 0.1, "fiberG": 2.2 },
+    "servingSizes": [
+      { "label": "100g", "grams": 100, "default": true },
+      { "label": "1 medium potato", "grams": 173 }
+    ]
+  },
+  {
+    "id": "zenith-common:potato-mashed",
+    "name": "Mashed potato (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["mashed potato", "mashed potatoes"],
+    "categoryTags": ["carb"],
+    "nutrientsPer100": { "caloriesKcal": 113, "proteinG": 2.1, "carbsG": 17, "fatG": 4.2, "fiberG": 1.4 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+
+  {
+    "id": "zenith-common:banana",
+    "name": "Banana (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["banana", "bananas"],
+    "categoryTags": ["fruit", "carb", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 89, "proteinG": 1.1, "carbsG": 22.8, "fatG": 0.3, "fiberG": 2.6, "sugarG": 12.2 },
+    "servingSizes": [{ "label": "1 medium banana", "grams": 118, "default": true }]
+  },
+  {
+    "id": "zenith-common:apple",
+    "name": "Apple (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["apple", "apples"],
+    "categoryTags": ["fruit"],
+    "nutrientsPer100": { "caloriesKcal": 52, "proteinG": 0.3, "carbsG": 14, "fatG": 0.2, "fiberG": 2.4, "sugarG": 10.4 },
+    "servingSizes": [{ "label": "1 medium apple", "grams": 182, "default": true }]
+  },
+  {
+    "id": "zenith-common:orange",
+    "name": "Orange (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["orange", "oranges"],
+    "categoryTags": ["fruit"],
+    "nutrientsPer100": { "caloriesKcal": 47, "proteinG": 0.9, "carbsG": 12, "fatG": 0.1, "fiberG": 2.4, "sugarG": 9.4 },
+    "servingSizes": [{ "label": "1 medium orange", "grams": 131, "default": true }]
+  },
+  {
+    "id": "zenith-common:strawberries",
+    "name": "Strawberries (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["strawberry", "strawberries", "berries"],
+    "categoryTags": ["fruit"],
+    "nutrientsPer100": { "caloriesKcal": 32, "proteinG": 0.7, "carbsG": 7.7, "fatG": 0.3, "fiberG": 2, "sugarG": 4.9 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+  {
+    "id": "zenith-common:blueberries",
+    "name": "Blueberries (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["blueberry", "blueberries", "berries"],
+    "categoryTags": ["fruit"],
+    "nutrientsPer100": { "caloriesKcal": 57, "proteinG": 0.7, "carbsG": 14.5, "fatG": 0.3, "fiberG": 2.4, "sugarG": 10 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+  {
+    "id": "zenith-common:grapes",
+    "name": "Grapes (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["grape", "grapes"],
+    "categoryTags": ["fruit"],
+    "nutrientsPer100": { "caloriesKcal": 69, "proteinG": 0.7, "carbsG": 18.1, "fatG": 0.2, "fiberG": 0.9, "sugarG": 15.5 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+
+  {
+    "id": "zenith-common:broccoli",
+    "name": "Broccoli (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["broccoli"],
+    "categoryTags": ["vegetable"],
+    "nutrientsPer100": { "caloriesKcal": 34, "proteinG": 2.8, "carbsG": 6.6, "fatG": 0.4, "fiberG": 2.6, "sugarG": 1.7 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+  {
+    "id": "zenith-common:spinach",
+    "name": "Spinach (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["spinach"],
+    "categoryTags": ["vegetable"],
+    "nutrientsPer100": { "caloriesKcal": 23, "proteinG": 2.9, "carbsG": 3.6, "fatG": 0.4, "fiberG": 2.2, "sugarG": 0.4 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+  {
+    "id": "zenith-common:carrots",
+    "name": "Carrots (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["carrot", "carrots"],
+    "categoryTags": ["vegetable"],
+    "nutrientsPer100": { "caloriesKcal": 41, "proteinG": 0.9, "carbsG": 9.6, "fatG": 0.2, "fiberG": 2.8, "sugarG": 4.7 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+  {
+    "id": "zenith-common:salad-greens",
+    "name": "Salad greens (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["salad", "salad greens", "mixed greens", "lettuce"],
+    "categoryTags": ["vegetable"],
+    "nutrientsPer100": { "caloriesKcal": 15, "proteinG": 1.4, "carbsG": 2.9, "fatG": 0.2, "fiberG": 1.3, "sugarG": 1.8 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+  {
+    "id": "zenith-common:onion",
+    "name": "Onion (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["onion", "onions"],
+    "categoryTags": ["vegetable"],
+    "nutrientsPer100": { "caloriesKcal": 40, "proteinG": 1.1, "carbsG": 9.3, "fatG": 0.1, "fiberG": 1.7, "sugarG": 4.2 },
+    "servingSizes": [{ "label": "100g", "grams": 100, "default": true }]
+  },
+
+  {
+    "id": "zenith-common:milk-2pct",
+    "name": "Milk 2% (generic)",
+    "kind": "drink",
+    "nutritionBasis": "per100ml",
+    "synonyms": ["milk", "2% milk", "two percent milk"],
+    "categoryTags": ["dairy", "drink"],
+    "nutrientsPer100": { "caloriesKcal": 50, "proteinG": 3.4, "carbsG": 4.9, "fatG": 1.9, "sugarG": 5 },
+    "servingSizes": [
+      { "label": "8 fl oz", "ml": 236.6, "default": true },
+      { "label": "100ml", "ml": 100 }
+    ]
+  },
+  {
+    "id": "zenith-common:milk-whole",
+    "name": "Whole milk (generic)",
+    "kind": "drink",
+    "nutritionBasis": "per100ml",
+    "synonyms": ["milk", "whole milk"],
+    "categoryTags": ["dairy", "drink"],
+    "nutrientsPer100": { "caloriesKcal": 61, "proteinG": 3.2, "carbsG": 4.8, "fatG": 3.3, "sugarG": 5 },
+    "servingSizes": [
+      { "label": "8 fl oz", "ml": 236.6, "default": true },
+      { "label": "100ml", "ml": 100 }
+    ]
+  },
+  {
+    "id": "zenith-common:greek-yogurt",
+    "name": "Greek yogurt (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["greek yogurt", "greek yoghurt", "yogurt", "yoghurt"],
+    "categoryTags": ["dairy", "protein", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 59, "proteinG": 10, "carbsG": 3.6, "fatG": 0.4 },
+    "servingSizes": [
+      { "label": "100g", "grams": 100, "default": true },
+      { "label": "1 cup", "grams": 245 }
+    ]
+  },
+  {
+    "id": "zenith-common:cheese",
+    "name": "Cheese (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["cheese", "cheddar", "mozzarella"],
+    "categoryTags": ["dairy", "fat"],
+    "nutrientsPer100": { "caloriesKcal": 402, "proteinG": 25, "carbsG": 1.3, "fatG": 33 },
+    "servingSizes": [{ "label": "1 oz", "grams": 28.35, "default": true }]
+  },
+
+  {
+    "id": "zenith-common:olive-oil",
+    "name": "Olive oil (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["olive oil", "oil"],
+    "categoryTags": ["fat", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 884, "proteinG": 0, "carbsG": 0, "fatG": 100 },
+    "servingSizes": [
+      { "label": "1 tbsp", "grams": 13.5, "default": true },
+      { "label": "100g", "grams": 100 }
+    ]
+  },
+  {
+    "id": "zenith-common:butter",
+    "name": "Butter (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["butter"],
+    "categoryTags": ["fat"],
+    "nutrientsPer100": { "caloriesKcal": 717, "proteinG": 0.9, "carbsG": 0.1, "fatG": 81 },
+    "servingSizes": [{ "label": "1 tbsp", "grams": 14, "default": true }]
+  },
+
+  {
+    "id": "zenith-common:water",
+    "name": "Water (generic)",
+    "kind": "drink",
+    "nutritionBasis": "per100ml",
+    "synonyms": ["water"],
+    "categoryTags": ["drink"],
+    "nutrientsPer100": { "caloriesKcal": 0, "proteinG": 0, "carbsG": 0, "fatG": 0 },
+    "servingSizes": [
+      { "label": "8 fl oz", "ml": 236.6, "default": true },
+      { "label": "100ml", "ml": 100 }
+    ]
+  },
+  {
+    "id": "zenith-common:black-coffee",
+    "name": "Black coffee (generic)",
+    "kind": "drink",
+    "nutritionBasis": "per100ml",
+    "synonyms": ["coffee", "black coffee", "americano"],
+    "categoryTags": ["drink", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 0, "proteinG": 0, "carbsG": 0, "fatG": 0 },
+    "servingSizes": [
+      { "label": "8 fl oz", "ml": 236.6, "default": true },
+      { "label": "100ml", "ml": 100 }
+    ]
+  },
+  {
+    "id": "zenith-common:tea",
+    "name": "Tea (generic)",
+    "kind": "drink",
+    "nutritionBasis": "per100ml",
+    "synonyms": ["tea", "black tea", "green tea"],
+    "categoryTags": ["drink"],
+    "nutrientsPer100": { "caloriesKcal": 0, "proteinG": 0, "carbsG": 0, "fatG": 0 },
+    "servingSizes": [
+      { "label": "8 fl oz", "ml": 236.6, "default": true },
+      { "label": "100ml", "ml": 100 }
+    ]
+  },
+
+  {
+    "id": "zenith-common:peanut-butter",
+    "name": "Peanut butter (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["peanut butter"],
+    "categoryTags": ["fat", "protein", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 588, "proteinG": 25, "carbsG": 20, "fatG": 50, "fiberG": 6, "sugarG": 9 },
+    "servingSizes": [{ "label": "1 tbsp", "grams": 16, "default": true }]
+  },
+  {
+    "id": "zenith-common:almonds",
+    "name": "Almonds (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["almond", "almonds"],
+    "categoryTags": ["fat", "protein"],
+    "nutrientsPer100": { "caloriesKcal": 579, "proteinG": 21.2, "carbsG": 21.7, "fatG": 49.9, "fiberG": 12.5 },
+    "servingSizes": [{ "label": "1 oz", "grams": 28.35, "default": true }]
+  },
+  {
+    "id": "zenith-common:whey-protein",
+    "name": "Whey protein scoop (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["whey", "whey protein", "protein powder"],
+    "categoryTags": ["protein", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 400, "proteinG": 80, "carbsG": 7, "fatG": 7 },
+    "servingSizes": [{ "label": "1 scoop", "grams": 30, "default": true }]
+  },
+  {
+    "id": "zenith-common:protein-bar",
+    "name": "Protein bar (generic)",
+    "kind": "food",
+    "nutritionBasis": "per100g",
+    "synonyms": ["protein bar", "bar"],
+    "categoryTags": ["protein", "staple"],
+    "nutrientsPer100": { "caloriesKcal": 360, "proteinG": 30, "carbsG": 35, "fatG": 10, "fiberG": 10 },
+    "servingSizes": [{ "label": "1 bar", "grams": 60, "default": true }]
+  }
+]
+

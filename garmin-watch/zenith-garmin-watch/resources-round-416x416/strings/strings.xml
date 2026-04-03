@@ -1,0 +1,13 @@
+<strings>
+  <string id="brand_live">ZENITH</string>
+  <string id="hint_run_recording">SEL pause · BACK end</string>
+  <string id="hint_run_paused">SEL resume · BACK end</string>
+  <string id="hint_lift">SEL set/undo · BACK end</string>
+  <string id="hint_confirm_end">BACK again to end</string>
+  <string id="hint_run_recording_compact">SEL pause · BACK end</string>
+  <string id="hint_run_paused_compact">SEL resume · BACK end</string>
+  <string id="hint_lift_compact">SEL set/undo · BACK end</string>
+  <string id="hint_confirm_end_compact">BACK again to end</string>
+  <string id="save_secondary">BACK discards</string>
+  <string id="save_secondary_compact">BACK discards</string>
+</strings>

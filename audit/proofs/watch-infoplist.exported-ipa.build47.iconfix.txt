@@ -1,0 +1,4 @@
+  "CFBundleIconName" => "AppIcon"
+      "CFBundleIconName" => "AppIcon"
+  "CFBundleShortVersionString" => "1.0.1"
+  "CFBundleVersion" => "47"

@@ -1,0 +1,191 @@
+{
+  "ok": true,
+  "createdAt": "2026-03-27T02:48:57.377Z",
+  "gateCount": 9,
+  "unknownGateKeys": [],
+  "failed": [],
+  "gates": [
+    {
+      "gateKey": "slo_compliance",
+      "title": "SLO Compliance",
+      "pass": true,
+      "notes": "failed=0"
+    },
+    {
+      "gateKey": "dual_path_parity",
+      "title": "Dual-Read / Dual-Write Parity",
+      "pass": true,
+      "notes": "sync=pass,discovery=pass"
+    },
+    {
+      "gateKey": "privacy_consent_enforcement",
+      "title": "Privacy / Consent Enforcement",
+      "pass": true,
+      "notes": "pass"
+    },
+    {
+      "gateKey": "retention_purge",
+      "title": "Retention Purge",
+      "pass": true,
+      "notes": "old_row_deleted=true"
+    },
+    {
+      "gateKey": "export_import_success",
+      "title": "Export / Import Success",
+      "pass": true,
+      "notes": "pass"
+    },
+    {
+      "gateKey": "canary_auto_halt",
+      "title": "Canary + Auto-Halt Simulation",
+      "pass": true,
+      "notes": "pass"
+    },
+    {
+      "gateKey": "rollback_restore",
+      "title": "Rollback Drill",
+      "pass": true,
+      "notes": "pass"
+    },
+    {
+      "gateKey": "admin_replay_idempotent",
+      "title": "Admin Replay Idempotency",
+      "pass": true,
+      "notes": "pass"
+    },
+    {
+      "gateKey": "offline_online_sync",
+      "title": "Offline / Online Flow",
+      "pass": true,
+      "notes": "pass"
+    }
+  ],
+  "scenarios": {
+    "summaryPath": "docs/qa/phase31/scenarios/hard_gates_summary.json",
+    "markdownPath": "docs/qa/phase31/scenarios/hard_gates_summary.md",
+    "total": 10,
+    "failed": 0
+  },
+  "execution": [
+    {
+      "key": "phase31_check_slos",
+      "script": "scripts/phase31-slo-check.js",
+      "args": [],
+      "ok": false,
+      "status": 1,
+      "stderr": "Phase 31 SLO check failed: Missing required env: SUPABASE_SERVICE_ROLE_KEY\n"
+    },
+    {
+      "key": "phase31_alert_sim",
+      "script": "scripts/phase31-alert-sim.js",
+      "args": [],
+      "ok": false,
+      "status": 1,
+      "stderr": "Phase 31 alert simulation failed: Missing required env: SUPABASE_SERVICE_ROLE_KEY\n"
+    },
+    {
+      "key": "phase31_anomaly_drill",
+      "script": "scripts/phase31-anomaly-drill.js",
+      "args": [],
+      "ok": false,
+      "status": 1,
+      "stderr": "Phase 31 anomaly drill failed: Missing required env: SUPABASE_SERVICE_ROLE_KEY\n"
+    },
+    {
+      "key": "phase31_remediation",
+      "script": "scripts/phase31-remediation.js",
+      "args": [],
+      "ok": false,
+      "status": 1,
+      "stderr": "Phase 31 remediation run failed: Missing required env: SUPABASE_SERVICE_ROLE_KEY\n"
+    },
+    {
+      "key": "phase31_e2e",
+      "script": "scripts/phase31-e2e-check.js",
+      "args": [],
+      "ok": false,
+      "status": 1,
+      "stderr": "Phase 31 E2E check failed: Missing required env: SUPABASE_SERVICE_ROLE_KEY\n"
+    },
+    {
+      "key": "scenario_canary",
+      "script": "scripts/phase31/scenarios/run-canary-rollout.js",
+      "args": [],
+      "ok": false,
+      "status": 1,
+      "stderr": "Scenario canary rollout failed: Missing required env: SUPABASE_SERVICE_ROLE_KEY\n"
+    },
+    {
+      "key": "scenario_rollback",
+      "script": "scripts/phase31/scenarios/run-rollback-drill.js",
+      "args": [],
+      "ok": false,
+      "status": 1,
+      "stderr": "Scenario rollback drill failed: Missing required env: SUPABASE_SERVICE_ROLE_KEY\n"
+    },
+    {
+      "key": "scenario_sync_e2e",
+      "script": "scripts/phase31/scenarios/run-sync-e2e.js",
+      "args": [],
+      "ok": true,
+      "status": 0,
+      "stderr": ""
+    },
+    {
+      "key": "scenario_goal_e2e",
+      "script": "scripts/phase31/scenarios/run-goal-e2e.js",
+      "args": [],
+      "ok": true,
+      "status": 0,
+      "stderr": ""
+    },
+    {
+      "key": "scenario_discovery_e2e",
+      "script": "scripts/phase31/scenarios/run-discovery-e2e.js",
+      "args": [],
+      "ok": true,
+      "status": 0,
+      "stderr": ""
+    },
+    {
+      "key": "scenario_export_import",
+      "script": "scripts/phase31/scenarios/run-export-import.js",
+      "args": [],
+      "ok": false,
+      "status": 1,
+      "stderr": "Scenario export/import failed: Missing required env: SUPABASE_SERVICE_ROLE_KEY\n"
+    },
+    {
+      "key": "scenario_delete_account",
+      "script": "scripts/phase31/scenarios/run-delete-account.js",
+      "args": [],
+      "ok": false,
+      "status": 1,
+      "stderr": "Scenario delete account failed: Missing required env: SUPABASE_SERVICE_ROLE_KEY\n"
+    },
+    {
+      "key": "scenario_consent_e2e",
+      "script": "scripts/phase31/scenarios/run-consent-e2e.js",
+      "args": [],
+      "ok": false,
+      "status": 1,
+      "stderr": "Scenario consent e2e failed: Missing required env: SUPABASE_SERVICE_ROLE_KEY\n"
+    },
+    {
+      "key": "scenario_admin_replay",
+      "script": "scripts/phase31/scenarios/run-admin-replay.js",
+      "args": [],
+      "ok": true,
+      "status": 0,
+      "stderr": ""
+    },
+    {
+      "key": "scenario_anomaly",
+      "script": "scripts/phase31/scenarios/run-anomaly-drill.js",
+      "args": [],
+      "ok": true,
+      "status": 0,
+      "stderr": ""
+    }
+  ]
+}

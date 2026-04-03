@@ -1,0 +1,183 @@
+Zenith Full Operational Gap Audit (Non-Garmin Scope)
+Date: 2026-03-26
+Scope update applied: All Garmin-related findings excluded.
+Repository: /Users/dankerbadge/Desktop/Zenith
+
+EXECUTIVE SUMMARY
+- Navigation wiring is largely intact: literal route checks passed across app + components.
+- Full operational functionality is NOT achieved.
+- Critical blockers remain in release gates, backend readiness gates, watch packaging, and QA artifact completeness.
+
+PATHWAY COVERAGE RESULTS (Buttons/Tiles/Routes)
+1) Route integrity
+- Command: npm run -s verify:routes
+- Result: PASS (Checked 276 files in app/)
+
+2) Placeholder route target scan
+- Command: node ./scripts/report-incomplete-routes.js
+- Result: PASS (No obvious incomplete/placeholder route targets)
+
+3) Literal route refs from app + components
+- Command: custom static resolver for router.push/replace/href/pathname
+- Result: PASS (111 unique literal route targets resolved)
+
+4) No-op onPress handlers
+- Scan result: only one disabled chip uses onPress no-op intentionally:
+  - /Users/dankerbadge/Desktop/Zenith/app/account/dashboard-preferences.tsx:210
+
+INCOMPLETE FINDINGS TO REACH FULL OPERATIONAL FUNCTIONALITY
+
+F-001 (Critical) Release pipeline is blocked by AppleDouble artifact pollution
+- Impacted pathways:
+  - CI/release verification cannot complete (ship-lock/lint/legal-site checks fail)
+  - Interface quality gates are noisy/blocked before true functional checks finish
+- Evidence:
+  - Command: npm run -s verify:ship-lock
+  - Result: FAIL with 185 parsing errors from files like:
+    - /Users/dankerbadge/Desktop/Zenith/app/(modals)/._food.tsx
+    - /Users/dankerbadge/Desktop/Zenith/components/._FoodLogger.tsx
+  - Artifact counts:
+    - 341 AppleDouble files under app/components/src/utils (find app components src utils -name '._*')
+    - 56 AppleDouble files under legal-site (find legal-site -name '._*')
+  - Command: npm run -s verify:legal-site
+  - Result: FAIL due ._index.html files missing required markers/canonical tags
+- Completion required:
+  - Remove all `._*` files from tracked code/docs/web roots
+  - Add ignore protections for AppleDouble artifacts
+  - Re-run ship-lock + legal-site verifications
+
+F-002 (Critical) Apple Watch app icon asset set is incomplete on disk
+- Impacted pathways:
+  - Watch bundle validation and release packaging
+  - P0 verification chain
+- Evidence:
+  - Command: npm run -s verify:watch-plist
+  - Result: FAIL (Missing Watch App icon file: AppIcon-1024.png)
+  - Directory contents:
+    - /Users/dankerbadge/Desktop/Zenith/ios/ZenithWatch Watch App/Assets.xcassets/AppIcon.appiconset only contains Contents.json
+  - Required filenames enforced by:
+    - /Users/dankerbadge/Desktop/Zenith/scripts/verify-watch-plist.js:87-103
+- Completion required:
+  - Add all required watch icon PNG assets referenced by Contents.json
+  - Re-run verify:watch-plist and verify:p0-all
+
+F-003 (Critical) Phase 30 integration gate cannot execute fully (missing privileged runtime env)
+- Impacted pathways:
+  - End-to-end backend integration verification
+- Evidence:
+  - Command: npm run -s verify:phase30-matrix
+  - Result: FAIL (Missing required env: SUPABASE_SERVICE_ROLE_KEY)
+  - Environment check shows key missing in current runtime session
+- Completion required:
+  - Provide runtime SUPABASE_SERVICE_ROLE_KEY for verification environment
+  - Re-run phase30 matrix
+
+F-004 (Critical) Phase 31 hard gates fail completely (9/9 gates; 10/10 scenarios)
+- Impacted pathways:
+  - Offline/online sync, privacy/consent, export/import, rollback/canary/admin replay readiness
+- Evidence:
+  - Command: npm run -s phase31:hard-gates
+  - Result: FAIL (phase31_hard_gate_failures: slo_compliance, dual_path_parity, privacy_consent_enforcement, retention_purge, export_import_success, canary_auto_halt, rollback_restore, admin_replay_idempotent, offline_online_sync)
+  - Report:
+    - /Users/dankerbadge/Desktop/Zenith/docs/qa/phase31/hard_gates.md
+    - /Users/dankerbadge/Desktop/Zenith/docs/qa/phase31/scenarios/hard_gates_summary.md
+- Completion required:
+  - Produce missing phase31 reports/artifacts and satisfy all hard-gate criteria
+
+F-005 (Critical) Food audit gate fails with 11 high-critical blockers
+- Impacted pathways:
+  - Food logging backend durability/parity, offline packs, privacy language policy, export/import portability, admin operations, runtime compatibility
+- Evidence:
+  - Command: npm run -s verify:food-audit-gates
+  - Result: FAIL (high-critical blockers: 11)
+  - Reports:
+    - /Users/dankerbadge/Desktop/Zenith/docs/qa/food_audit_gate_report.md
+    - /Users/dankerbadge/Desktop/Zenith/docs/qa/FOOD_SYSTEM_PROD_AUDIT.json
+- Completion required (high-level):
+  - Implement listed missing high-critical capabilities and clear gate
+
+F-006 (Critical) Phase 32 CI gate fails (system not release-ready)
+- Impacted pathways:
+  - Reliability/parity/freshness release acceptance
+- Evidence:
+  - Command: npm run -s verify:phase32
+  - Result: FAIL (parity_monitor, provider_freshness, food_audit_high_critical, phase31_hard_gates)
+  - Dashboard:
+    - /Users/dankerbadge/Desktop/Zenith/docs/qa/phase32/PHASE19_32_SYSTEM_READINESS_DASHBOARD.md
+    - Generated 2026-03-26, Release Ready: NO
+- Completion required:
+  - Resolve failed phase32 gate inputs until CI gate passes
+
+F-007 (High) Supabase runtime preflight fails due function reachability mismatch
+- Impacted pathways:
+  - Runtime readiness verification for connected features
+- Evidence:
+  - Command: npm run -s verify:supabase-runtime
+  - Result: FAIL (edge function "_shared" not found 404)
+  - Verifier behavior:
+    - /Users/dankerbadge/Desktop/Zenith/scripts/verify-supabase-runtime.js:203-216 scans all function directories and probes each as callable edge function
+- Completion required:
+  - Either deploy expected callable functions or exclude helper directory `_shared` from runtime probe logic
+
+F-008 (High) Release ledger remains partial/blocked on multiple phases
+- Impacted pathways:
+  - Formal go-live readiness for end-to-end flows
+- Evidence:
+  - /Users/dankerbadge/Desktop/Zenith/docs/RELEASE_LOCK_LEDGER.md
+  - Last updated: 2026-02-04
+  - Phase 30 status: BLOCKED
+  - Multiple phases marked PARTIAL with pending manual signoffs
+- Completion required:
+  - Close pending manual/operational signoffs and update ledger
+
+F-009 (High) Watch-first + app-closed Live Activity control remains incomplete (non-Garmin)
+- Impacted pathways:
+  - Apple Watch + Live Activity end-to-end remote control reliability
+- Evidence:
+  - /Users/dankerbadge/Desktop/Zenith/docs/WATCH_LIVE_ACTIVITY_IMPLEMENTATION_STATUS.md
+  - "Still required" items include:
+    - Native ActivityKit action handling for app-closed controls
+    - WatchConnectivity reliability bridge
+    - watchOS authoritative recorder integration
+    - Full real-device QA matrix
+  - /Users/dankerbadge/Desktop/Zenith/docs/WATCH_RUN_SYNC_HARDENING.md notes full E2E still requires successful native build/runtime validation
+- Completion required:
+  - Implement listed native/watch ownership items and complete QA matrix
+
+F-010 (Medium) Messaging capability is intentionally limited (links blocked)
+- Impacted pathways:
+  - Community/messages feature completeness
+- Evidence:
+  - /Users/dankerbadge/Desktop/Zenith/utils/messageService.ts:482-484
+  - Returns: "Links are disabled in MVP messaging."
+- Completion required:
+  - Decide whether link sharing is in-scope for full functionality; implement policy + moderation-safe link support if yes
+
+F-011 (Medium) Privacy/consent runtime feature flags are still disabled
+- Impacted pathways:
+  - Consent-gated notifications/analytics behavior in production runtime
+- Evidence:
+  - /Users/dankerbadge/Desktop/Zenith/utils/appConfig.ts:221-225
+    - FF_NOTIFICATION_CONSENT_ENABLED=false
+    - FF_ANALYTICS_MINIMIZATION_ENABLED=false
+    - FF_PUBLIC_SHARE_GUARD_ENABLED=false
+    - FF_PRIVACY_UI_ENABLED=false
+    - FF_USER_VISIBLE_DATA_EXPLANATIONS_ENABLED=false
+  - /Users/dankerbadge/Desktop/Zenith/utils/notificationService.ts:27-30 bypasses consent gate when flag is false
+  - /Users/dankerbadge/Desktop/Zenith/utils/crashReporter.ts:22-25 bypasses analytics consent gate when flag is false
+- Completion required:
+  - Enable and validate these privacy flags when policy rollout is ready
+
+NON-BLOCKING POSITIVES (Validated)
+- TypeScript check passes: npm run -s typecheck
+- Primary route wiring checks pass: verify:routes + custom route resolution
+- Core run/workout static integrity checks pass:
+  - verify:run-lifecycle
+  - verify:run-tracking-engine
+  - verify:live-tracking-calibration
+  - verify:workout-integrity
+
+OVERALL READINESS VERDICT (NON-GARMIN)
+- NOT FULLY OPERATIONAL.
+- Primary user navigation pathways are structurally connected, but release/ops readiness and several high-critical backend/system capabilities are still incomplete.
+

@@ -1,0 +1,17 @@
+{
+  "scenario_id": "S31-003",
+  "description": "Offline logs queue and sync online with dual-write parity under threshold",
+  "critical_paths": ["sync", "logging"],
+  "flags": ["FF_OFFLINE_SYNC_ENABLED", "FF_DUAL_WRITE_ENABLED"],
+  "client_versions": ["latest", "v2.1.0"],
+  "offline_states": [true],
+  "expected_outcomes": {
+    "logs_synced": true,
+    "dual_write_parity": "<=0.1%"
+  },
+  "report_paths": {
+    "json": "docs/qa/phase31/scenarios/sync_e2e_001.json",
+    "md": "docs/qa/phase31/scenarios/sync_e2e_001.md"
+  },
+  "owner": "QA"
+}

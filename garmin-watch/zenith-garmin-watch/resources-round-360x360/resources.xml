@@ -1,0 +1,4 @@
+<resources>
+  <bitmap id="LauncherIcon" filename="drawables/launcher_icon.svg" dithering="none" />
+  <bitmap id="IconSmall" filename="drawables/icon_small.png" />
+</resources>

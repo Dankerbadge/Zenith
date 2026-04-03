@@ -1,0 +1,19 @@
+HTTP/2 500 
+date: Wed, 11 Feb 2026 06:16:23 GMT
+content-type: application/json; charset=utf-8
+server: cloudflare
+cf-ray: 9cc1b79c991042a0-EWR
+cf-cache-status: DYNAMIC
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+vary: Accept-Encoding
+x-content-type-options: nosniff
+proxy-status: PostgREST; error=42P17
+sb-gateway-version: 1
+sb-project-ref: erdllcmwzqqbevfdknbh
+sb-request-id: 019c4b57-fdea-70bd-8cac-ae2702bd4d54
+x-envoy-attempt-count: 1
+x-envoy-upstream-service-time: 5
+set-cookie: __cf_bm=X72xpg_SH6CmvNNyxKzNKr9p8hQdYBAGdMP913HWs9c-1770790583-1.0.1.1-7A29TqwB0Ouk_eSKeEV4fRR418cGAHZRJrX7XSaumo0MMxjtN0xbeIe2hCKxzP3v8y9mvtFVpOiC79LsBQeiU6_n1jBQ3tCMA2R74AHZGJM; path=/; expires=Wed, 11-Feb-26 06:46:23 GMT; domain=.supabase.co; HttpOnly; Secure; SameSite=None
+alt-svc: h3=":443"; ma=86400
+
+{"code":"42P17","details":null,"hint":null,"message":"infinite recursion detected in policy for relation \"groups\""}

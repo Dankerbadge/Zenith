@@ -1,0 +1,3 @@
+Identifier=app.zenithfitness.mobile
+TeamIdentifier=63FB3BKYN2
+Sealed Resources version=2 rules=10 files=88

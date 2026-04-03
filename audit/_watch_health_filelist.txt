@@ -1,0 +1,39 @@
+app/health-permissions.tsx
+app/wearables/garmin.tsx
+app/wearables/index.tsx
+ios/Zenith.xcodeproj/project.pbxproj
+ios/Zenith.xcodeproj/xcuserdata/dankerbadge.xcuserdatad/xcschemes/xcschememanagement.plist
+ios/Zenith/Info.plist
+ios/Zenith/RunConnectivityManager.swift
+ios/Zenith/Zenith.Release.entitlements
+ios/Zenith/Zenith.entitlements
+ios/ZenithWatch Watch App/Assets.xcassets/AccentColor.colorset/Contents.json
+ios/ZenithWatch Watch App/Assets.xcassets/AppIcon.appiconset/Contents.json
+ios/ZenithWatch Watch App/Assets.xcassets/Contents.json
+ios/ZenithWatch Watch App/ContentView.swift
+ios/ZenithWatch Watch App/Info.plist
+ios/ZenithWatch Watch App/WatchModels.swift
+ios/ZenithWatch Watch App/WatchWorkoutManager.swift
+ios/ZenithWatch Watch App/ZenithWatch.entitlements
+ios/ZenithWatch Watch App/ZenithWatchApp.swift
+ios/ZenithWidgets/AppIntent.swift
+ios/ZenithWidgets/Assets.xcassets/AccentColor.colorset/Contents.json
+ios/ZenithWidgets/Assets.xcassets/AppIcon.appiconset/Contents.json
+ios/ZenithWidgets/Assets.xcassets/Contents.json
+ios/ZenithWidgets/Assets.xcassets/WidgetBackground.colorset/Contents.json
+ios/ZenithWidgets/Info.plist
+ios/ZenithWidgets/ZenithRunLiveActivity.swift
+ios/ZenithWidgets/ZenithRunLiveActivityIntents.swift
+ios/ZenithWidgets/ZenithWidgets.swift
+ios/ZenithWidgets/ZenithWidgetsBundle.swift
+ios/ZenithWidgets/ZenithWidgetsControl.swift
+scripts/verify-p0-all.js
+scripts/verify-watch-plist.js
+scripts/verify-xcarchive-healthkit.js
+scripts/verify-xcarchive.js
+utils/garminBackendService.ts
+utils/garminCompanionService.ts
+utils/healthService.ts
+utils/liftTagService.ts
+utils/runControlSync.ts
+utils/wearableImportService.ts

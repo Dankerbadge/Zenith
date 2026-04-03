@@ -1,0 +1,242 @@
+{
+  "generatedAt": "2026-03-27T02:48:57.536Z",
+  "summary": {
+    "samples": 23,
+    "healthySamples": 12,
+    "reliabilityPct": 52.17,
+    "avgParityFailures": 2.39,
+    "avgProviderFailures": 1.43
+  },
+  "history": [
+    {
+      "generatedAt": "2026-03-26T19:32:01.602Z",
+      "parityOk": true,
+      "providerOk": true,
+      "parityFailing": 0,
+      "providerFailing": 0,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-26T19:32:08.396Z",
+      "parityOk": true,
+      "providerOk": true,
+      "parityFailing": 0,
+      "providerFailing": 0,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-26T19:32:45.223Z",
+      "parityOk": false,
+      "providerOk": false,
+      "parityFailing": 5,
+      "providerFailing": 3,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-26T19:32:58.455Z",
+      "parityOk": false,
+      "providerOk": false,
+      "parityFailing": 5,
+      "providerFailing": 3,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-26T19:33:31.580Z",
+      "parityOk": true,
+      "providerOk": true,
+      "parityFailing": 0,
+      "providerFailing": 0,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-26T19:33:31.886Z",
+      "parityOk": false,
+      "providerOk": false,
+      "parityFailing": 5,
+      "providerFailing": 3,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-26T20:39:39.921Z",
+      "parityOk": true,
+      "providerOk": true,
+      "parityFailing": 0,
+      "providerFailing": 0,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-26T20:39:40.389Z",
+      "parityOk": false,
+      "providerOk": false,
+      "parityFailing": 5,
+      "providerFailing": 3,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-26T22:31:26.380Z",
+      "parityOk": true,
+      "providerOk": true,
+      "parityFailing": 0,
+      "providerFailing": 0,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-26T22:31:26.821Z",
+      "parityOk": false,
+      "providerOk": false,
+      "parityFailing": 5,
+      "providerFailing": 3,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-26T22:32:41.775Z",
+      "parityOk": false,
+      "providerOk": false,
+      "parityFailing": 5,
+      "providerFailing": 3,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-26T22:39:11.374Z",
+      "parityOk": false,
+      "providerOk": false,
+      "parityFailing": 5,
+      "providerFailing": 3,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-27T00:31:20.030Z",
+      "parityOk": true,
+      "providerOk": true,
+      "parityFailing": 0,
+      "providerFailing": 0,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-27T00:42:40.671Z",
+      "parityOk": true,
+      "providerOk": true,
+      "parityFailing": 0,
+      "providerFailing": 0,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-27T02:02:52.524Z",
+      "parityOk": true,
+      "providerOk": true,
+      "parityFailing": 0,
+      "providerFailing": 0,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-27T02:03:16.828Z",
+      "parityOk": false,
+      "providerOk": false,
+      "parityFailing": 5,
+      "providerFailing": 3,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-27T02:34:00.127Z",
+      "parityOk": false,
+      "providerOk": false,
+      "parityFailing": 5,
+      "providerFailing": 3,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-27T02:36:40.971Z",
+      "parityOk": false,
+      "providerOk": false,
+      "parityFailing": 5,
+      "providerFailing": 3,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-27T02:39:32.542Z",
+      "parityOk": false,
+      "providerOk": false,
+      "parityFailing": 5,
+      "providerFailing": 3,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-27T02:39:49.372Z",
+      "parityOk": true,
+      "providerOk": true,
+      "parityFailing": 0,
+      "providerFailing": 0,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-27T02:45:10.820Z",
+      "parityOk": true,
+      "providerOk": true,
+      "parityFailing": 0,
+      "providerFailing": 0,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-27T02:45:18.416Z",
+      "parityOk": true,
+      "providerOk": true,
+      "parityFailing": 0,
+      "providerFailing": 0,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    },
+    {
+      "generatedAt": "2026-03-27T02:48:57.536Z",
+      "parityOk": true,
+      "providerOk": true,
+      "parityFailing": 0,
+      "providerFailing": 0,
+      "sev1": 4,
+      "sev2": 0,
+      "remediationApplied": 4
+    }
+  ]
+}

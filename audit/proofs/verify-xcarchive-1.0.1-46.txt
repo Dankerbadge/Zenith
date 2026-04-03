@@ -1,0 +1,8 @@
+✅ Archive looks upload-ready
+- Archive: /Users/dankerbadge/Desktop/Zenith/ios/build/Zenith-1.0.1-46.xcarchive
+- Version: 1.0.1
+- Build: 46
+- iOS entitlements: HealthKit ✅
+- Watch entitlements: HealthKit ✅
+- iOS arch: Non-fat file: /Users/dankerbadge/Desktop/Zenith/ios/build/Zenith-1.0.1-46.xcarchive/Products/Applications/Zenith.app/Zenith is architecture: arm64
+- Watch arch: Architectures in the fat file: /Users/dankerbadge/Desktop/Zenith/ios/build/Zenith-1.0.1-46.xcarchive/Products/Applications/Zenith.app/Watch/ZenithWatch Watch App.app/ZenithWatch Watch App are: arm64_32 arm64

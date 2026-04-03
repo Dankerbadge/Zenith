@@ -1,0 +1,33 @@
+<strings>
+  <string id="app_name">Zenith</string>
+  <string id="brand_live">ZENITH</string>
+  <string id="start_run">Start Run</string>
+  <string id="start_treadmill">Start Treadmill</string>
+  <string id="start_lift">Start Lift</string>
+  <string id="pause">Pause</string>
+  <string id="resume">Resume</string>
+  <string id="end">End</string>
+  <string id="save">Save</string>
+  <string id="discard">Discard</string>
+  <string id="confirm_end_title">End workout?</string>
+  <string id="confirm_end_hint">Tap again to end</string>
+  <string id="status_connected">Connected</string>
+  <string id="status_waiting">Waiting for phone</string>
+  <string id="status_delivered">Delivered</string>
+  <string id="hint_run_recording">SELECT to pause · BACK to end</string>
+  <string id="hint_run_paused">SELECT to resume · BACK to end</string>
+  <string id="hint_lift">SELECT set/undo · BACK to end</string>
+  <string id="hint_confirm_end">Tap again to end</string>
+  <string id="hint_run_recording_compact">SEL pause · BACK end</string>
+  <string id="hint_run_paused_compact">SEL resume · BACK end</string>
+  <string id="hint_lift_compact">SEL set/undo · BACK end</string>
+  <string id="hint_confirm_end_compact">BACK again to confirm</string>
+  <string id="save_title">Workout ended</string>
+  <string id="save_primary">SAVE</string>
+  <string id="save_secondary">or BACK to discard</string>
+  <string id="save_secondary_compact">BACK discards</string>
+  <string id="status_title">Status</string>
+  <string id="status_empty">No deliveries yet</string>
+  <string id="status_last_label">Last delivered:</string>
+  <string id="status_back">Back to exit</string>
+</strings>

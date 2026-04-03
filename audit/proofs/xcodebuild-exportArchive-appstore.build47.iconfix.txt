@@ -1,0 +1,5 @@
+2026-02-10 09:35:12.782 xcodebuild[33293:8259058] [MT] IDEDistribution: -[IDEDistributionLogging _createLoggingBundleAtPath:]: Created bundle at path "/var/folders/q0/0vnbzxlx5gd429y_k6x_z23r0000gn/T/Zenith_2026-02-10_09-35-12.780.xcdistributionlogs".
+Exported Zenith to: /Users/dankerbadge/Desktop/Zenith/ios/build/export-appstore-1.0.1-47.iconfix
+** EXPORT SUCCEEDED **
+
+XCODEBUILD_EXPORT_EXIT=0

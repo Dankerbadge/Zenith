@@ -1,0 +1,37 @@
+project.manifest = manifest.xml
+base.sourcePath = source
+base.resourcePath = resources
+
+# Device-specific string/resource overrides (otherwise resources-*/ are ignored by the compiler).
+round-208x208 = $(round)
+round-208x208.resourcePath = $(round-208x208.resourcePath);resources-round-208x208
+
+round-218x218 = $(round)
+round-218x218.resourcePath = $(round-218x218.resourcePath);resources-round-218x218
+
+round-240x240 = $(round)
+round-240x240.resourcePath = $(round-240x240.resourcePath);resources-round-240x240
+
+round-260x260 = $(round)
+round-260x260.resourcePath = $(round-260x260.resourcePath);resources-round-260x260
+
+round-280x280 = $(round)
+round-280x280.resourcePath = $(round-280x280.resourcePath);resources-round-280x280
+
+round-360x360 = $(round)
+round-360x360.resourcePath = $(round-360x360.resourcePath);resources-round-360x360
+
+round-390x390 = $(round)
+round-390x390.resourcePath = $(round-390x390.resourcePath);resources-round-390x390
+
+round-416x416 = $(round)
+round-416x416.resourcePath = $(round-416x416.resourcePath);resources-round-416x416
+
+round-454x454 = $(round)
+round-454x454.resourcePath = $(round-454x454.resourcePath);resources-round-454x454
+
+rectangle-240x240 = $(rectangle)
+rectangle-240x240.resourcePath = $(rectangle-240x240.resourcePath);resources-rectangle-240x240
+
+rectangle-320x360 = $(rectangle)
+rectangle-320x360.resourcePath = $(rectangle-320x360.resourcePath);resources-rectangle-320x360

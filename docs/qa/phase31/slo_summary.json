@@ -1,0 +1,84 @@
+{
+  "ok": true,
+  "createdAt": "2026-03-27T00:42:40.765Z",
+  "totals": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  },
+  "zeroValueMetrics": [],
+  "metrics": [
+    {
+      "criticalPath": "export_import",
+      "sliMetric": "job_success_rate",
+      "interval": "per_job",
+      "direction": "higher_is_better",
+      "comparator": ">=",
+      "currentValue": 99.4,
+      "targetValue": 99,
+      "pass": true,
+      "delta": 0.4,
+      "updatedAt": "2026-03-27T00:21:52.676+00:00"
+    },
+    {
+      "criticalPath": "logging",
+      "sliMetric": "write_success_rate",
+      "interval": "1h",
+      "direction": "higher_is_better",
+      "comparator": ">=",
+      "currentValue": 99.9,
+      "targetValue": 99.5,
+      "pass": true,
+      "delta": 0.4,
+      "updatedAt": "2026-03-27T00:21:52.676+00:00"
+    },
+    {
+      "criticalPath": "privacy_consent",
+      "sliMetric": "enforcement_success",
+      "interval": "per_attempt",
+      "direction": "higher_is_better",
+      "comparator": ">=",
+      "currentValue": 100,
+      "targetValue": 100,
+      "pass": true,
+      "delta": 0,
+      "updatedAt": "2026-03-27T00:21:52.676+00:00"
+    },
+    {
+      "criticalPath": "retention",
+      "sliMetric": "purge_success",
+      "interval": "daily",
+      "direction": "higher_is_better",
+      "comparator": ">=",
+      "currentValue": 100,
+      "targetValue": 100,
+      "pass": true,
+      "delta": 0,
+      "updatedAt": "2026-03-27T00:21:52.676+00:00"
+    },
+    {
+      "criticalPath": "search",
+      "sliMetric": "p95_latency",
+      "interval": "1h",
+      "direction": "lower_is_better",
+      "comparator": "<=",
+      "currentValue": 212.5,
+      "targetValue": 250,
+      "pass": true,
+      "delta": -37.5,
+      "updatedAt": "2026-03-27T00:21:52.676+00:00"
+    },
+    {
+      "criticalPath": "sync",
+      "sliMetric": "offline_sync_success",
+      "interval": "24h",
+      "direction": "higher_is_better",
+      "comparator": ">=",
+      "currentValue": 99.4,
+      "targetValue": 99,
+      "pass": true,
+      "delta": 0.4,
+      "updatedAt": "2026-03-27T00:21:52.676+00:00"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+.env*
+backups/
+node_modules/
+.expo/
+supabase/.temp/
+garmin-watch/.keys/
+ios/
+android/
+

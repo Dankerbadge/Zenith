@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Troubleshooting | Zenith Support</title>
+  <meta name="description" content="Guided checklists for GPS, billing, and watch sync issues." />
+  <meta property="og:title" content="Troubleshooting | Zenith Support" />
+  <meta property="og:description" content="Work through common issues step by step." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://zenithfit.app/support/troubleshooting" />
+  <link rel="canonical" href="https://zenithfit.app/support/troubleshooting" />
+  <link rel="stylesheet" href="/assets/site.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="bg-orb a"></div>
+  <div class="bg-orb b"></div>
+  <div class="bg-orb c"></div>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="/">Zenith Fitness</a>
+      <nav class="nav-desktop" aria-label="Primary">
+        <a href="/product">Product</a><a href="/features">Features</a><a href="/wearables">Wearables</a><a href="/support">Support</a><a href="/privacy">Privacy</a>
+        <a class="nav-download" href="/download" data-event="download_click" data-label="header_download">Download</a>
+      </nav>
+      <button class="nav-mobile-toggle" data-mobile-toggle aria-expanded="false" aria-controls="mobile-nav">Menu</button>
+    </div>
+    <nav id="mobile-nav" class="nav-mobile" data-mobile-nav aria-label="Mobile primary">
+      <a href="/product">Product</a><a href="/features">Features</a><a href="/wearables">Wearables</a><a href="/support">Support</a><a href="/privacy">Privacy</a><a href="/status">Status</a>
+      <a href="/download" data-event="download_click" data-label="mobile_download">Download</a>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <section class="section section-intro reveal">
+      <div class="section-header">
+        <h2>Troubleshooting</h2>
+        <p>Most of the time it is one of a few things. Work through a checklist, then contact us if needed.</p>
+      </div>
+
+      <nav class="flow-nav" aria-label="Troubleshooting flows">
+        <a href="#gps-flow">GPS</a>
+        <a href="#billing-flow">Billing</a>
+        <a href="#watch-flow">Wearables</a>
+      </nav>
+
+      <div class="grid-1 flow" id="gps-flow" data-flow>
+        <article class="card">
+          <h3>Flow A: GPS not tracking accurately</h3>
+          <div class="flow-steps">
+            <label class="flow-step"><input type="checkbox" /> Confirm Location permission is set to While Using the App.</label>
+            <label class="flow-step"><input type="checkbox" /> Start outdoors and wait 20-30 seconds before moving.</label>
+            <label class="flow-step"><input type="checkbox" /> Disable Low Power Mode during active run tracking.</label>
+            <label class="flow-step"><input type="checkbox" /> If drift lasts over two minutes, end and restart the session.</label>
+          </div>
+          <div class="flow-status" data-flow-status aria-live="polite"></div>
+          <div class="notice ok" data-flow-done hidden>Nice. If drift returns repeatedly, send us the date, time, and route screenshot.</div>
+          <div class="cta-row">
+            <a class="btn ghost" href="/contact?category=Bug&topic=gps" data-event="support_flow_started" data-label="gps_flow_contact">Contact support</a>
+          </div>
+        </article>
+      </div>
+
+      <div class="grid-1 flow" id="billing-flow" data-flow>
+        <article class="card">
+          <h3>Flow B: Subscription not recognized</h3>
+          <div class="flow-steps">
+            <label class="flow-step"><input type="checkbox" /> Confirm the purchase is tied to the same Apple ID used on this device.</label>
+            <label class="flow-step"><input type="checkbox" /> In Zenith, open Subscription and tap Restore purchases.</label>
+            <label class="flow-step"><input type="checkbox" /> Close and reopen Zenith, then re-check entitlement.</label>
+            <label class="flow-step"><input type="checkbox" /> If still locked, capture purchase date and account email.</label>
+          </div>
+          <div class="flow-status" data-flow-status aria-live="polite"></div>
+          <div class="notice ok" data-flow-done hidden>If it still fails, send the details and we’ll trace it with you.</div>
+          <div class="cta-row">
+            <a class="btn ghost" href="/contact?category=Billing&topic=billing" data-event="support_flow_started" data-label="billing_flow_contact">Contact support</a>
+          </div>
+        </article>
+      </div>
+
+      <div class="grid-1 flow" id="watch-flow" data-flow>
+        <article class="card">
+          <h3>Flow C: Watch not syncing</h3>
+          <p class="small">Apple Watch and Garmin sync are in development. Use this flow for companion connectivity checks.</p>
+          <div class="flow-steps">
+            <label class="flow-step"><input type="checkbox" /> Confirm Bluetooth is on and companion app is running.</label>
+            <label class="flow-step"><input type="checkbox" /> Reopen Zenith on phone, then on watch, and wait 30 seconds.</label>
+            <label class="flow-step"><input type="checkbox" /> Check the last sync timestamp in wearable settings.</label>
+            <label class="flow-step"><input type="checkbox" /> Restart both devices if the sync queue is still stale.</label>
+          </div>
+          <div class="flow-status" data-flow-status aria-live="polite"></div>
+          <div class="notice ok" data-flow-done hidden>If it still does not sync, send your watch model and last sync time.</div>
+          <div class="cta-row">
+            <a class="btn ghost" href="/contact?category=Bug&topic=watch" data-event="support_flow_started" data-label="watch_flow_contact">Contact support</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>© 2026 Zenith Fitness · Built for calm consistency.</div>
+      <div class="footer-links">
+        <a href="/about">About</a>
+        <a href="/wearables">Wearables</a>
+        <a href="/roadmap">Roadmap</a>
+        <a href="/releases">Releases</a>
+        <a href="/contact">Contact</a>
+        <a href="/terms">Terms</a>
+        <a href="/privacy-policy">Privacy Policy</a>
+        <a href="/data-permissions">Data & Permissions</a>
+        <a href="/cookies">Cookies</a>
+        <a href="/status">Status</a>
+      </div>
+    </footer>
+  </main>
+
+  <script src="/assets/site.js" defer></script>
+</body>
+</html>

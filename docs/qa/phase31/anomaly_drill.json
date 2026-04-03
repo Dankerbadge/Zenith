@@ -1,0 +1,69 @@
+{
+  "ok": true,
+  "createdAt": "2026-03-27T00:43:47.730Z",
+  "totals": {
+    "anomalies": 3,
+    "haltCandidates": 2,
+    "rollbackCandidates": 0,
+    "sloFailures": 0
+  },
+  "anomalies": [
+    {
+      "alertId": "6b26fa00-7112-47fa-9efe-eb66f2eb79f1",
+      "criticalPath": "sync",
+      "severity": "sev2",
+      "threshold": 5,
+      "actualValue": 6.4,
+      "overBy": 1.4,
+      "preferredAction": "canary_halt",
+      "owner": "QA",
+      "detectedAt": "2026-03-27T00:43:47.492Z",
+      "notes": "Anomaly detected for sync; threshold 5, actual 6.4"
+    },
+    {
+      "alertId": "f5aa304d-f617-42bb-aa14-3c2253c57254",
+      "criticalPath": "search",
+      "severity": "sev2",
+      "threshold": 400,
+      "actualValue": 455,
+      "overBy": 55,
+      "preferredAction": "canary_halt",
+      "owner": "DevOps",
+      "detectedAt": "2026-03-27T00:43:47.492Z",
+      "notes": "Anomaly detected for search; threshold 400, actual 455"
+    },
+    {
+      "alertId": "a7c28232-3191-41ec-be40-d843df35de84",
+      "criticalPath": "logging",
+      "severity": "sev1",
+      "threshold": 0.5,
+      "actualValue": 0.72,
+      "overBy": 0.22,
+      "preferredAction": "automatic_rollback",
+      "owner": "Backend Eng",
+      "detectedAt": "2026-03-27T00:43:47.492Z",
+      "notes": "Anomaly detected for logging; threshold 0.5, actual 0.72"
+    }
+  ],
+  "incidents": {
+    "attempted": 3,
+    "written": 3,
+    "rows": [
+      {
+        "alertId": "6b26fa00-7112-47fa-9efe-eb66f2eb79f1",
+        "ok": true,
+        "status": 201
+      },
+      {
+        "alertId": "f5aa304d-f617-42bb-aa14-3c2253c57254",
+        "ok": true,
+        "status": 201
+      },
+      {
+        "alertId": "a7c28232-3191-41ec-be40-d843df35de84",
+        "ok": true,
+        "status": 201
+      }
+    ]
+  }
+}

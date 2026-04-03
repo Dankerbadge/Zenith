@@ -1,0 +1,18 @@
+{
+  "scenario_id": "S31-010",
+  "description": "Synthetic anomaly injection triggers auto-halt and remediation workflows",
+  "critical_paths": ["search", "logging", "sync"],
+  "flags": ["FF_CANARY_ROLLOUT_ENABLED", "FF_ADMIN_REPLAY_TOOLS_ENABLED"],
+  "client_versions": ["latest", "v2.1.0"],
+  "offline_states": [false, true],
+  "expected_outcomes": {
+    "auto_halt_triggered": true,
+    "remediation_triggered": true,
+    "audit_events_created": true
+  },
+  "report_paths": {
+    "json": "docs/qa/phase31/scenarios/anomaly_drill_001.json",
+    "md": "docs/qa/phase31/scenarios/anomaly_drill_001.md"
+  },
+  "owner": "DevOps"
+}

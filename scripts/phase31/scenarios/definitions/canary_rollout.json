@@ -1,0 +1,18 @@
+{
+  "scenario_id": "S31-001",
+  "description": "1% canary rollout with auto-halt on dual-write mismatch",
+  "critical_paths": ["logging", "sync", "search"],
+  "flags": ["FF_CANARY_ROLLOUT_ENABLED", "FF_DUAL_WRITE_ENABLED"],
+  "client_versions": ["latest", "v2.1.0"],
+  "offline_states": [false, true],
+  "expected_outcomes": {
+    "halt_triggered": true,
+    "dual_write_parity": "<=0.1%",
+    "audit_events_created": true
+  },
+  "report_paths": {
+    "json": "docs/qa/phase31/scenarios/canary_rollout_001.json",
+    "md": "docs/qa/phase31/scenarios/canary_rollout_001.md"
+  },
+  "owner": "DevOps"
+}

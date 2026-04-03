@@ -1,0 +1,18 @@
+{
+  "scenario_id": "S31-006",
+  "description": "Export/import flow preserves snapshot correctness and import reachability",
+  "critical_paths": ["export_import"],
+  "flags": ["FF_EXPORT_ENABLED", "FF_IMPORT_ENABLED"],
+  "client_versions": ["latest"],
+  "offline_states": [false],
+  "expected_outcomes": {
+    "export_snapshot_complete": true,
+    "import_restore_success": true,
+    "audit_events_created": true
+  },
+  "report_paths": {
+    "json": "docs/qa/phase31/scenarios/export_import_001.json",
+    "md": "docs/qa/phase31/scenarios/export_import_001.md"
+  },
+  "owner": "Data Eng"
+}

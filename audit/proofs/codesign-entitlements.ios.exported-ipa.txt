@@ -1,0 +1,10 @@
+{
+  "application-identifier" => "63FB3BKYN2.app.zenithfitness.mobile"
+  "aps-environment" => "production"
+  "beta-reports-active" => 1
+  "com.apple.developer.healthkit" => 1
+  "com.apple.developer.healthkit.access" => [
+  ]
+  "com.apple.developer.team-identifier" => "63FB3BKYN2"
+  "get-task-allow" => 0
+}

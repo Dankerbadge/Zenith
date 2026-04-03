@@ -1,0 +1,139 @@
+{
+  "expo": {
+    "name": "Zenith",
+    "slug": "Zenith",
+    "version": "1.2.9",
+    "orientation": "portrait",
+    "icon": "./assets/images/ZenithLogo3.png",
+    "scheme": "zenith",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "extra": {
+      "EXPO_PUBLIC_SUPABASE_URL": "https://erdllcmwzqqbevfdknbh.supabase.co",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVyZGxsY213enFxYmV2ZmRrbmJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDQ0NjcsImV4cCI6MjA4NTQ4MDQ2N30.i4XUP0QSoRtnfyqRB5Ie76GNrpijdNyKnh1HHvYks84",
+      "EXPO_PUBLIC_PASSWORD_RESET_REDIRECT_URL": "zenith://auth/reset-password"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.zenithfitness.mobile",
+      "buildNumber": "11",
+      "associatedDomains": [
+        "applinks:erdllcmwzqqbevfdknbh.supabase.co",
+        "applinks:zenithfit.app"
+      ],
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "35F9.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "E174.1"
+            ]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "C617.1"
+            ]
+          }
+        ]
+      },
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "location",
+          "remote-notification"
+        ],
+        "NSSupportsLiveActivities": true,
+        "NSSupportsLiveActivitiesFrequentUpdates": true,
+        "NSCameraUsageDescription": "Zenith uses your camera to scan food barcodes for quick nutrition logging.",
+        "NSLocationWhenInUseUsageDescription": "Zenith uses your location to track distance, pace, and route during outdoor runs.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Zenith uses background location to continue tracking your run when the screen is off.",
+        "NSHealthShareUsageDescription": "Zenith reads your health data to show steps, heart rate, and activity metrics.",
+        "NSHealthUpdateUsageDescription": "Zenith saves your workouts to Apple Health so they appear in your health history.",
+        "NSMotionUsageDescription": "Zenith uses motion data to count your daily steps.",
+        "NSPhotoLibraryUsageDescription": "Zenith accesses your photos to set a profile picture and share workout summaries."
+      }
+    },
+    "android": {
+      "package": "app.zenithfitness.mobile",
+      "versionCode": 7,
+      "softwareKeyboardLayoutMode": "pan",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "zenith"
+            }
+          ],
+          "category": [
+            "DEFAULT",
+            "BROWSABLE"
+          ]
+        }
+      ],
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#090909",
+          "dark": {
+            "backgroundColor": "#090909"
+          }
+        }
+      ],
+      "react-native-health",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Zenith uses your camera to scan food barcodes."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Zenith uses background location to track your run.",
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      "expo-notifications",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

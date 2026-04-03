@@ -1,0 +1,5 @@
+Food search basics verification passed.
+- Catalog items: 49
+- Required canonical pins present
+- Modal surfaces common foods
+verify_food_search_basics_exit=0

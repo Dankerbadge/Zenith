@@ -1,0 +1,6 @@
+Identifier=app.zenithfitness.mobile
+Authority=Apple Distribution: ALEXANDER SERBAN (63FB3BKYN2)
+Authority=Apple Worldwide Developer Relations Certification Authority
+Authority=Apple Root CA
+TeamIdentifier=63FB3BKYN2
+Sealed Resources version=2 rules=10 files=88

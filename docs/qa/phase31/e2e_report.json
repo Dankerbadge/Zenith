@@ -1,0 +1,66 @@
+{
+  "ok": true,
+  "createdAt": "2026-03-27T00:43:46.336Z",
+  "totals": {
+    "total": 9,
+    "passed": 9,
+    "failed": 0
+  },
+  "failed": [],
+  "checks": [
+    {
+      "id": "E31-001",
+      "scenario": "Offline queue -> online aggregate sync",
+      "result": "PASS",
+      "notes": "calories=730"
+    },
+    {
+      "id": "E31-002",
+      "scenario": "Goal snapshot write/read",
+      "result": "PASS",
+      "notes": "goal_snapshot_ok"
+    },
+    {
+      "id": "E31-003",
+      "scenario": "Discovery/usual foods context update",
+      "result": "PASS",
+      "notes": "usual_food_upsert_ok"
+    },
+    {
+      "id": "E31-004",
+      "scenario": "Export + import endpoint availability",
+      "result": "PASS",
+      "notes": "import_probe=portability-import:200"
+    },
+    {
+      "id": "E31-005",
+      "scenario": "Privacy consent + public share guard",
+      "result": "PASS",
+      "notes": "share_guard_enforced"
+    },
+    {
+      "id": "E31-006",
+      "scenario": "Retention enforcement purge behavior",
+      "result": "PASS",
+      "notes": "old_row_deleted=true"
+    },
+    {
+      "id": "E31-007",
+      "scenario": "Admin replay idempotency",
+      "result": "PASS",
+      "notes": "totals=0/0"
+    },
+    {
+      "id": "E31-008",
+      "scenario": "Runtime compatibility contract",
+      "result": "PASS",
+      "notes": "runtime_contract_ok"
+    },
+    {
+      "id": "E31-009",
+      "scenario": "Dual-write parity evidence from runtime",
+      "result": "PASS",
+      "notes": "rows=1,parity_ok=true"
+    }
+  ]
+}

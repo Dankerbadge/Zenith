@@ -1,0 +1,2 @@
+[scripts-report-p0] No matching scripts diagnostic report found in Downloads.
+automation_scripts_report_p0_exit=0

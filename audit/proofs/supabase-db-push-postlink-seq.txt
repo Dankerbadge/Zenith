@@ -1,0 +1,10 @@
+Initialising login role...
+Connecting to remote database...
+Remote migration versions not found in local migrations directory.
+
+Make sure your local git repo is up-to-date. If the error persists, try repairing the migration history table:
+supabase migration repair --status reverted 20260209180227 20260209180232 20260209180238 20260209180245 20260209180256 20260209180316 20260209180340 20260209180416
+
+And update local migrations to match remote database:
+supabase db pull
+

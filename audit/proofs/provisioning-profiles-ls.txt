@@ -1,0 +1,10 @@
+# MobileDevice profiles
+<none>
+
+# Xcode UserData profiles
+/Users/dankerbadge/Library/Developer/Xcode/UserData/Provisioning Profiles/3df0be00-6238-4d21-b2ef-a379585be322.mobileprovision
+/Users/dankerbadge/Library/Developer/Xcode/UserData/Provisioning Profiles/5c9de944-f64c-4895-afe0-364540c28357.mobileprovision
+/Users/dankerbadge/Library/Developer/Xcode/UserData/Provisioning Profiles/668295be-bf4c-4c3b-8548-2e2130d44aed.mobileprovision
+/Users/dankerbadge/Library/Developer/Xcode/UserData/Provisioning Profiles/6ebce30a-7c29-4772-9f90-7b57e41b7bee.mobileprovision
+/Users/dankerbadge/Library/Developer/Xcode/UserData/Provisioning Profiles/73db3c86-0c8c-4a82-aff9-a895ab3db8d3.mobileprovision
+/Users/dankerbadge/Library/Developer/Xcode/UserData/Provisioning Profiles/e70ccedf-0994-4b3b-8267-8642b764dae4.mobileprovision

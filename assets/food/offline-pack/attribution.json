@@ -1,0 +1,20 @@
+{
+  "providers": [
+    {
+      "key": "usda",
+      "name": "USDA FoodData Central",
+      "license": "U.S. Government Works"
+    },
+    {
+      "key": "off",
+      "name": "Open Food Facts",
+      "license": "ODbL 1.0"
+    },
+    {
+      "key": "restaurant_seed",
+      "name": "Zenith Seeded Restaurant Dataset",
+      "license": "Internal QA Seed"
+    }
+  ],
+  "generatedAt": "2026-03-26T00:00:00.000Z"
+}

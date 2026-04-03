@@ -1,0 +1,46 @@
+{
+  "ok": true,
+  "createdAt": "2026-03-27T00:21:53.953Z",
+  "tableCheck": {
+    "food_v2_slo_metrics": true,
+    "food_v2_alert_events": true,
+    "food_v2_remediation_jobs": true,
+    "food_v2_oncall_shifts": true,
+    "food_v2_incident_reports": true
+  },
+  "fixtures": {
+    "users": {
+      "phase31_regular": {
+        "email": "phase31_regular@zenithfit.app",
+        "userId": "b862140c-3b77-4b90-80fe-454597b9606f",
+        "accessToken": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImZhMTY0OTQ4LWYwZDgtNDQzOS05NjgyLTQxYWU2MjVkMjFjZiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2VyZGxsY213enFxYmV2ZmRrbmJoLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJiODYyMTQwYy0zYjc3LTRiOTAtODBmZS00NTQ1OTdiOTYwNmYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzc0NTc0NDk5LCJpYXQiOjE3NzQ1NzA4OTksImVtYWlsIjoicGhhc2UzMV9yZWd1bGFyQHplbml0aGZpdC5hcHAiLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsIjoicGhhc2UzMV9yZWd1bGFyQHplbml0aGZpdC5hcHAiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwicGhhc2UzMV9maXh0dXJlIjp0cnVlLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInJvbGUiOiJ1c2VyIiwic3ViIjoiYjg2MjE0MGMtM2I3Ny00YjkwLTgwZmUtNDU0NTk3Yjk2MDZmIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NzQ1NzA4OTl9XSwic2Vzc2lvbl9pZCI6ImIyNmRiYjg0LTczNjQtNDQ3MS05ZTRjLWRkMmIzYmEwMWUyNSIsImlzX2Fub255bW91cyI6ZmFsc2V9.JwYWcLlLsGGsPMYaMtftoADLjrSgA5kUNcn8duf_figxBi1-mEyIQ8RopOuLZCvjrXPoE7NYDUw7ca9oTOPjrg"
+      },
+      "phase31_legacy": {
+        "email": "phase31_legacy@zenithfit.app",
+        "userId": "0eaac5ca-7836-4c8f-9fd0-4818de47e70f",
+        "accessToken": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImZhMTY0OTQ4LWYwZDgtNDQzOS05NjgyLTQxYWU2MjVkMjFjZiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2VyZGxsY213enFxYmV2ZmRrbmJoLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIwZWFhYzVjYS03ODM2LTRjOGYtOWZkMC00ODE4ZGU0N2U3MGYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzc0NTc0NTAwLCJpYXQiOjE3NzQ1NzA5MDAsImVtYWlsIjoicGhhc2UzMV9sZWdhY3lAemVuaXRoZml0LmFwcCIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnsiZW1haWwiOiJwaGFzZTMxX2xlZ2FjeUB6ZW5pdGhmaXQuYXBwIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInBoYXNlMzFfZml4dHVyZSI6dHJ1ZSwicGhvbmVfdmVyaWZpZWQiOmZhbHNlLCJyb2xlIjoidXNlciIsInN1YiI6IjBlYWFjNWNhLTc4MzYtNGM4Zi05ZmQwLTQ4MThkZTQ3ZTcwZiJ9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzc0NTcwOTAwfV0sInNlc3Npb25faWQiOiIxYzU3NDFiMi0wZGE5LTRkM2UtODI3YS01MDQxZjI3YWNlYjciLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.TM98ZmzlIzpL3KhxcBhSiKRIKNG9L2oGW2Z4woBjEwXJ6VHEH6b7uQvbsDTsJdRsUPa7HWBFXHQz-Ok_kUUN-Q"
+      },
+      "phase31_admin": {
+        "email": "phase31_admin@zenithfit.app",
+        "userId": "7504c424-c856-4d3c-b304-7f3af1a4b910",
+        "accessToken": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImZhMTY0OTQ4LWYwZDgtNDQzOS05NjgyLTQxYWU2MjVkMjFjZiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2VyZGxsY213enFxYmV2ZmRrbmJoLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI3NTA0YzQyNC1jODU2LTRkM2MtYjMwNC03ZjNhZjFhNGI5MTAiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzc0NTc0NTAwLCJpYXQiOjE3NzQ1NzA5MDAsImVtYWlsIjoicGhhc2UzMV9hZG1pbkB6ZW5pdGhmaXQuYXBwIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbCI6InBoYXNlMzFfYWRtaW5AemVuaXRoZml0LmFwcCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaGFzZTMxX2ZpeHR1cmUiOnRydWUsInBob25lX3ZlcmlmaWVkIjpmYWxzZSwicm9sZSI6ImFkbWluIiwic3ViIjoiNzUwNGM0MjQtYzg1Ni00ZDNjLWIzMDQtN2YzYWYxYTRiOTEwIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NzQ1NzA5MDB9XSwic2Vzc2lvbl9pZCI6IjRhMjhiZDVlLWRmN2QtNGI4My04NDRlLTQwMmQzMjVkODE4OCIsImlzX2Fub255bW91cyI6ZmFsc2V9.QiYKydzv8LCeaT6znZCQi2JAPKcEMMEk9emoXHBREsfLyrH-CCEtnAF_ixlZMpJrS3LEdl_KoP6jZ5yJvITwnw"
+      }
+    },
+    "sloMetrics": {
+      "count": 6,
+      "skipped": false
+    },
+    "alertEvents": {
+      "count": 3,
+      "skipped": false
+    },
+    "oncallShifts": {
+      "count": 2,
+      "skipped": false
+    },
+    "consent": {
+      "skipped": false,
+      "count": 3
+    }
+  }
+}

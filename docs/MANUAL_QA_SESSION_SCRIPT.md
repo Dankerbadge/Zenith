@@ -1,0 +1,83 @@
+# Manual QA Session Script
+
+Use this script to execute the remaining non-CLI verification in one focused session.
+
+## Session Metadata
+
+- Date:
+- Device:
+- OS:
+- Build/commit:
+
+## 1) Stats Integrity (Phase 23.8)
+
+- [ ] 1Y range with sparse logs: averages use logged-day denominators
+- [ ] Mixed sparse metrics: water/calories denominators differ correctly
+- [ ] No logs in range: averages display `—`
+- [ ] Run pace cards use total time / total distance
+- [ ] Weight cards show last/delta/count without calendar-day averaging
+
+## 2) Run/Route/Segment/Challenge Chaos (Phases 17-20)
+
+- [ ] Start -> pause -> resume -> end -> save
+- [ ] Start -> pause -> end (without resume) saves correctly and excludes paused time from moving metrics
+- [ ] Rotate during run and review
+- [ ] Background/foreground during run
+- [ ] GPS-loss recovery path
+- [ ] No duplicate run save from rapid taps
+- [ ] Route matching sanity (same route match, different route no false match)
+- [ ] Segment attempt rejects invalid/low-quality PRs
+- [ ] Challenge accept/decline/expire and idempotent reward/penalty behavior
+
+## 2.1) Live Tracking Truth Checks (Accuracy Directive)
+
+- [ ] During first 10-15s run pace shows acquiring/settling state before stable pace
+- [ ] Low-confidence GPS periods show estimated/unavailable hints, not fake precision
+- [ ] Pause state stops distance accumulation and pace display indicates paused
+- [ ] Post-run review shows refinement transparency note when correction threshold is exceeded
+- [ ] Run summary shows live signal quality distribution (confidence + source mix) when diagnostics exist
+- [ ] No unexplained large post-session metric jumps
+
+## 3) Community Tone and Consistency (Phase 23.7)
+
+- [ ] Home/Teams/Groups spacing and hierarchy consistent
+- [ ] Empty states are invitational (not punitive)
+- [ ] Non-admin users do not see admin management surfaces
+- [ ] Copy contains no shaming tone
+
+## 4) Log and Speed Polish (Phases 6 + 12)
+
+- [ ] Log card updates animate once when value changes
+- [ ] One toast + one haptic per successful save
+- [ ] No duplicate logging under rapid taps
+- [ ] Common food entry flow meets speed target
+- [ ] Workout set add flow after first set meets speed target
+
+## 5) AI Exit Validation (Phase 25)
+
+- [ ] AI is OFF by default on fresh profile
+- [ ] OFF state shows no AI surfaces
+- [ ] ON state only shows AI in Home, Stats, Post-run, Weekly recap
+- [ ] No AI during active run/log modals
+- [ ] Dismissed insight does not reappear same day
+- [ ] Sparse data language is conditional and non-judgmental
+
+## 6) Safety/Compliance/Store Readiness (Phases 28 + 30)
+
+- [ ] Privacy/Terms/support links open and are public
+- [ ] Report/block/mute behavior works across social surfaces
+- [ ] Rate-limits trigger on spam patterns
+- [ ] Export/restore round trip works
+- [ ] App Store metadata/assets have no placeholder content
+
+## Findings
+
+- Critical:
+- High:
+- Medium:
+- Low:
+
+## Final Call
+
+- [ ] PASS
+- [ ] DEFER (list items + rationale)

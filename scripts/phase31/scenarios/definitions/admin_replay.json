@@ -1,0 +1,17 @@
+{
+  "scenario_id": "S31-009",
+  "description": "Admin replay and remediation remain idempotent and audited",
+  "critical_paths": ["admin_operations", "sync"],
+  "flags": ["FF_ADMIN_REPLAY_TOOLS_ENABLED", "FF_ADMIN_SUPPORT_TOOLS_ENABLED"],
+  "client_versions": ["latest"],
+  "offline_states": [false],
+  "expected_outcomes": {
+    "replay_idempotent": true,
+    "audit_events_created": true
+  },
+  "report_paths": {
+    "json": "docs/qa/phase31/scenarios/admin_replay_001.json",
+    "md": "docs/qa/phase31/scenarios/admin_replay_001.md"
+  },
+  "owner": "Ops"
+}

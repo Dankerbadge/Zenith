@@ -1,0 +1,51 @@
+{
+  "ok": true,
+  "createdAt": "2026-03-27T00:43:47.241Z",
+  "totals": {
+    "total": 3,
+    "breached": 3,
+    "sev1Breached": true,
+    "sev2Breached": true
+  },
+  "results": [
+    {
+      "alertId": "a7c28232-3191-41ec-be40-d843df35de84",
+      "criticalPath": "logging",
+      "severity": "sev1",
+      "threshold": 0.5,
+      "actualValue": 0.72,
+      "breached": true,
+      "autoAction": "automatic_rollback",
+      "owner": "Backend Eng",
+      "incident": {
+        "written": true
+      }
+    },
+    {
+      "alertId": "f5aa304d-f617-42bb-aa14-3c2253c57254",
+      "criticalPath": "search",
+      "severity": "sev2",
+      "threshold": 400,
+      "actualValue": 455,
+      "breached": true,
+      "autoAction": "canary_halt",
+      "owner": "DevOps",
+      "incident": {
+        "written": true
+      }
+    },
+    {
+      "alertId": "6b26fa00-7112-47fa-9efe-eb66f2eb79f1",
+      "criticalPath": "sync",
+      "severity": "sev2",
+      "threshold": 5,
+      "actualValue": 6.4,
+      "breached": true,
+      "autoAction": "canary_halt",
+      "owner": "QA",
+      "incident": {
+        "written": true
+      }
+    }
+  ]
+}

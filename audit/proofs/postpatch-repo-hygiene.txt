@@ -1,0 +1,18 @@
+[F001/F002] Search for private key markers
+BEGIN PRIVATE KEY matches:
+./audit/proofs/postpatch-repo-hygiene.txt:2:BEGIN PRIVATE KEY matches:
+./audit/FINDINGS_LOG.md:21:  1. `grep -RIn "BEGIN PRIVATE KEY" garmin-watch` returns no matches.
+
+[F004] Vercel metadata directory
+legal-site/.vercel: missing (expected)
+
+[F005] Supabase .temp state dirs
+supabase/.temp: missing (expected)
+ios/supabase/.temp: missing (expected)
+
+[F006] xcuserdata files (excluding Pods)
+ios/Zenith.xcworkspace/xcuserdata/dankerbadge.xcuserdatad/UserInterfaceState.xcuserstate
+ios/Zenith.xcodeproj/xcuserdata/dankerbadge.xcuserdatad/xcschemes/xcschememanagement.plist
+
+[F007] .DS_Store files (excluding node_modules)
+DS_STORE: <none> (expected)

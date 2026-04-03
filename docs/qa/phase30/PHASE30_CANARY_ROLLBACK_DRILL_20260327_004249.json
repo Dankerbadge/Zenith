@@ -1,0 +1,59 @@
+{
+  "ok": true,
+  "scenario": "halt",
+  "inject": "dual_read_mismatch",
+  "status": "halted",
+  "haltAt": 10,
+  "haltReasons": [
+    "dual_read_mismatch_halt"
+  ],
+  "rollbackAt": null,
+  "rollbackReasons": [],
+  "thresholds": {
+    "dualReadMismatchRateHalt": 0.02,
+    "dualReadMismatchRateRollback": 0.05,
+    "syncFailureRateHalt": 0.01,
+    "syncFailureRateRollback": 0.03,
+    "p95LatencyMsHalt": 350,
+    "p95LatencyMsRollback": 500
+  },
+  "usingTelemetry": false,
+  "timeline": [
+    {
+      "stagePct": 1,
+      "metrics": {
+        "dualReadMismatchRate": 0.00405,
+        "syncFailureRate": 0.00303,
+        "p95LatencyMs": 190.8
+      },
+      "haltReasons": [],
+      "rollbackReasons": [],
+      "decision": "continue"
+    },
+    {
+      "stagePct": 5,
+      "metrics": {
+        "dualReadMismatchRate": 0.00425,
+        "syncFailureRate": 0.00315,
+        "p95LatencyMs": 194
+      },
+      "haltReasons": [],
+      "rollbackReasons": [],
+      "decision": "continue"
+    },
+    {
+      "stagePct": 10,
+      "metrics": {
+        "dualReadMismatchRate": 0.027,
+        "syncFailureRate": 0.0033,
+        "p95LatencyMs": 198
+      },
+      "haltReasons": [
+        "dual_read_mismatch_halt"
+      ],
+      "rollbackReasons": [],
+      "decision": "halt"
+    }
+  ],
+  "createdAt": "2026-03-27T00:42:49.900Z"
+}

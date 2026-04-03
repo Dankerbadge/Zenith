@@ -1,0 +1,102 @@
+{
+  "ok": true,
+  "generatedAt": "2026-04-03T02:15:44.228Z",
+  "mode": "standard",
+  "source": {
+    "phase31HardGatesPresent": true,
+    "phase31HardGatesOk": true
+  },
+  "totals": {
+    "metrics": 5,
+    "failing": 0,
+    "sev1": 3,
+    "sev2": 0
+  },
+  "metrics": [
+    {
+      "key": "offline_online_parity",
+      "label": "Offline -> Online Log Success Rate",
+      "owner": "QA / Sync Eng",
+      "value": 99.7,
+      "target": 99.5,
+      "operator": ">=",
+      "source": "phase31_gate:offline_online_sync:pass",
+      "synthetic": false,
+      "strictFailure": false,
+      "thresholdPass": true,
+      "pass": true,
+      "fastBurnRate": 7.2,
+      "slowBurnRate": 0.6,
+      "severity": "sev1",
+      "autoAction": "auto_halt_or_rollback"
+    },
+    {
+      "key": "dual_write_parity",
+      "label": "Dual-Write Mismatch Rate",
+      "owner": "Backend Eng",
+      "value": 0.05,
+      "target": 0.1,
+      "operator": "<=",
+      "source": "phase31_gate:dual_path_parity:pass",
+      "synthetic": false,
+      "strictFailure": false,
+      "thresholdPass": true,
+      "pass": true,
+      "fastBurnRate": 6,
+      "slowBurnRate": 0.5,
+      "severity": "sev1",
+      "autoAction": "auto_halt_or_rollback"
+    },
+    {
+      "key": "dual_read_parity",
+      "label": "Dual-Read Mismatch Rate",
+      "owner": "DevOps / QA",
+      "value": 0.05,
+      "target": 0.1,
+      "operator": "<=",
+      "source": "phase31_gate:dual_path_parity:pass",
+      "synthetic": false,
+      "strictFailure": false,
+      "thresholdPass": true,
+      "pass": true,
+      "fastBurnRate": 6,
+      "slowBurnRate": 0.5,
+      "severity": "sev1",
+      "autoAction": "auto_halt_or_rollback"
+    },
+    {
+      "key": "feature_flag_drift",
+      "label": "Feature Flag Drift Count",
+      "owner": "DevOps",
+      "value": 0,
+      "target": 0,
+      "operator": "<=",
+      "source": "phase31_overall_health",
+      "synthetic": false,
+      "strictFailure": false,
+      "thresholdPass": true,
+      "pass": true,
+      "fastBurnRate": 0,
+      "slowBurnRate": 0,
+      "severity": "none",
+      "autoAction": "none"
+    },
+    {
+      "key": "offline_pack_integrity",
+      "label": "Offline Pack Checksum Mismatch Count",
+      "owner": "DevOps",
+      "value": 0,
+      "target": 0,
+      "operator": "<=",
+      "source": "phase31_offline_sync_health",
+      "synthetic": false,
+      "strictFailure": false,
+      "thresholdPass": true,
+      "pass": true,
+      "fastBurnRate": 0,
+      "slowBurnRate": 0,
+      "severity": "none",
+      "autoAction": "none"
+    }
+  ]
+}

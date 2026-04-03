@@ -1,0 +1,131 @@
+Zenith Non-Garmin UI Pathway Completeness Audit
+Date: 2026-03-26
+Scope: Entire app/interface pathway review, excluding all Garmin-related routes, integrations, and findings.
+
+Summary
+This audit reviewed Expo Router screens, button/tile navigation pathways, and feature completeness for non-Garmin surfaces. Core route wiring is intact, but several pathways are not at full operational maturity due to release blockers, partial feature implementations, and cloud/backend dependency gates.
+
+Verification Commands Run
+- node scripts/verify-routes.js (PASS)
+- node scripts/report-incomplete-routes.js (PASS; no heuristic placeholder hits)
+- npm run -s typecheck (PASS)
+- npm run -s lint (FAIL; parse errors from AppleDouble ._* files)
+- npx eslint app components src utils --ext .ts,.tsx --ignore-pattern '**/._*' (0 errors, warnings only)
+- node scripts/verify-p0-all.js (FAIL; missing Apple Watch icon assets)
+- Marker scans over app/components/utils for P0/preview/placeholder/incomplete states
+
+Findings
+
+1) [CRITICAL] Repo contains 341 AppleDouble metadata artifacts that break lint/verify release gates
+Pathways impacted
+- Entire app release-readiness pathway (CI/QA gates fail before feature-level validation).
+Evidence
+- `npm run -s lint` reports 185 errors with "Parsing error: Invalid character" on `app/._*`, `components/._*`, etc.
+- `find app components src utils -type f -name '._*' | wc -l` => 341
+- `.gitignore` does not ignore `._*` artifacts.
+References
+- /Users/dankerbadge/Desktop/Zenith/.gitignore:29
+- /Users/dankerbadge/Desktop/Zenith/app/._run-review.tsx:1
+- /Users/dankerbadge/Desktop/Zenith/components/._PremiumGate.tsx:1
+
+2) [HIGH] Apple Watch app packaging is incomplete (non-Garmin), failing required icon validation
+Pathways impacted
+- Watch companion release/build pathway; watch interface cannot pass packaging validation as-is.
+Evidence
+- `verify-p0-all` fails on `verify-watch-plist.js` with: "Missing Watch App icon file: AppIcon-1024.png".
+- Watch app icon set folder currently contains only `Contents.json` (+ metadata sidecar), not required PNG assets.
+References
+- /Users/dankerbadge/Desktop/Zenith/scripts/verify-watch-plist.js:87
+- /Users/dankerbadge/Desktop/Zenith/scripts/verify-watch-plist.js:102
+- /Users/dankerbadge/Desktop/Zenith/ios/ZenithWatch Watch App/Assets.xcassets/AppIcon.appiconset/Contents.json:1
+
+3) [HIGH] Store purchase pathway is a simulated local flow, not production-grade billing
+Pathways impacted
+- Store CTA flows (`UNLOCK NOW`, `START 7-DAY FREE TRIAL`, restore/entitlement expectations).
+Evidence
+- Purchase function explicitly marked as simulation: "Simulate IAP purchase (replace with RevenueCat/Expo IAP)".
+- `purchasePack` only mutates AsyncStorage purchased-pack flags.
+- Store screen calls this flow for purchase confirmation.
+References
+- /Users/dankerbadge/Desktop/Zenith/utils/monetizationService.ts:604
+- /Users/dankerbadge/Desktop/Zenith/utils/monetizationService.ts:606
+- /Users/dankerbadge/Desktop/Zenith/app/store.tsx:69
+
+4) [MEDIUM] Pack detail pathways are partially built-out; content depth is incomplete for some packs
+Pathways impacted
+- Store -> Pack detail pathway after purchase/open.
+Evidence
+- Pack detail screen renders feature text list only (no deeper pack experience route from this screen).
+- Running pack and calisthenics pack exercise library currently return empty arrays; calisthenics explicitly marked as shipping later.
+References
+- /Users/dankerbadge/Desktop/Zenith/app/pack/[id].tsx:39
+- /Users/dankerbadge/Desktop/Zenith/utils/monetizationService.ts:667
+- /Users/dankerbadge/Desktop/Zenith/utils/monetizationService.ts:669
+
+5) [HIGH] Progress Routes feature path is explicitly P0/partial (route builder not yet shipped)
+Pathways impacted
+- Profile -> Stats/Progress -> Routes -> Route detail.
+Evidence
+- Routes screen states: "P0: save a past GPS route as a reusable route. Route builder ships next."
+- Route detail states: "P0: offline viewing uses a stored snapshot image."
+References
+- /Users/dankerbadge/Desktop/Zenith/app/account/progress/routes.tsx:117
+- /Users/dankerbadge/Desktop/Zenith/app/account/progress/routes/[routeId].tsx:128
+- /Users/dankerbadge/Desktop/Zenith/app/(tabs)/profile.tsx:551
+
+6) [HIGH] Large social/team/event/message/progress surfaces require cloud configuration and degrade to gated states without it
+Pathways impacted
+- Teams, Events, Groups, Messages, Progress analytics/readiness/training/nutrition, and password reset completion.
+Evidence
+- Supabase client hard-disables to placeholder proxy when config invalid/missing.
+- Multiple route screens render "Cloud sync required" states as terminal pathway gates.
+- Password reset completion throws when cloud reset is not configured.
+References
+- /Users/dankerbadge/Desktop/Zenith/utils/supabaseClient.ts:157
+- /Users/dankerbadge/Desktop/Zenith/utils/supabaseClient.ts:201
+- /Users/dankerbadge/Desktop/Zenith/app/(tabs)/teams.tsx:486
+- /Users/dankerbadge/Desktop/Zenith/app/events/index.tsx:168
+- /Users/dankerbadge/Desktop/Zenith/app/groups/index.tsx:215
+- /Users/dankerbadge/Desktop/Zenith/app/messages/index.tsx:99
+- /Users/dankerbadge/Desktop/Zenith/app/account/progress/readiness.tsx:35
+- /Users/dankerbadge/Desktop/Zenith/app/context/authcontext.tsx:1091
+
+7) [MEDIUM] Community feed pathway has a misleading empty-state behavior when cloud is unavailable
+Pathways impacted
+- Community tab -> Feed view; post/like actions.
+Evidence
+- Load path silently clears posts and returns when `!isSupabaseConfigured`, without explicit cloud-required banner.
+- UI then renders "No posts yet" empty state and action buttons; posting/liking subsequently show sign-in-required alerts even when the issue is cloud config.
+References
+- /Users/dankerbadge/Desktop/Zenith/app/(tabs)/community/index.tsx:205
+- /Users/dankerbadge/Desktop/Zenith/app/(tabs)/community/index.tsx:472
+- /Users/dankerbadge/Desktop/Zenith/app/(tabs)/community/index.tsx:280
+- /Users/dankerbadge/Desktop/Zenith/app/(tabs)/community/index.tsx:302
+
+8) [MEDIUM] Team feed setup action can dead-end in a temporary-unavailable loop
+Pathways impacted
+- Teams -> Team detail -> "Set up feed" action.
+Evidence
+- If `ensureTeamGroup` does not return an id, user receives a temporary-unavailable alert and retry loop rather than a deterministic recovery path.
+References
+- /Users/dankerbadge/Desktop/Zenith/app/teams/[teamId]/index.tsx:208
+- /Users/dankerbadge/Desktop/Zenith/app/teams/[teamId]/index.tsx:211
+- /Users/dankerbadge/Desktop/Zenith/app/teams/[teamId]/index.tsx:227
+
+9) [LOW] Non-production preview/debug routes remain in app routing surface
+Pathways impacted
+- Deep-link/discoverability pathways (not primary menu pathways).
+Evidence
+- Teams demo route explicitly labeled mock preview.
+- Premium bundle screen explicitly labeled "P0 debug view".
+References
+- /Users/dankerbadge/Desktop/Zenith/app/teams/demo.tsx:43
+- /Users/dankerbadge/Desktop/Zenith/app/account/premium-bundle.tsx:86
+
+Operational Status Verdict (Non-Garmin)
+- Route-link integrity: PASS
+- Type/build correctness: PASS
+- Lint/release gate status: FAIL (artifact contamination)
+- Full pathway completeness: NOT FULLY OPERATIONAL (due findings 1, 2, 3, 5, and cloud dependency constraints in 6)
+
+End of report.

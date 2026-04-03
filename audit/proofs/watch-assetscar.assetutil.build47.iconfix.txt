@@ -1,0 +1,8 @@
+AppIcon icon records: 7
+48 48 watch 320 2
+55 55 watch 384 2
+58 58 watch None 2
+80 80 watch None 2
+87 87 watch None 3
+172 172 watch 320 2
+196 196 watch 384 2

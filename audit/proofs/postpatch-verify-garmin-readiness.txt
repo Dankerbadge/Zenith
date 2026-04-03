@@ -1,0 +1,19 @@
+[garmin-verify] PASS: Found utils/garminProtocol.ts
+[garmin-verify] PASS: Found utils/garminCompanionService.ts
+[garmin-verify] PASS: Found utils/garminBackendService.ts
+[garmin-verify] PASS: Found utils/garminNativeBridge.ts
+[garmin-verify] PASS: Found app/wearables/index.tsx
+[garmin-verify] PASS: Found app/wearables/garmin.tsx
+[garmin-verify] PASS: Found supabase/functions/garmin-entitlement/index.ts
+[garmin-verify] PASS: Found supabase/functions/garmin-link-token/index.ts
+[garmin-verify] PASS: Found supabase/functions/garmin-link-confirm/index.ts
+[garmin-verify] PASS: Found supabase/functions/garmin-workout-upsert/index.ts
+[garmin-verify] PASS: Found ios/Zenith/GarminCompanionManager.swift
+[garmin-verify] PASS: Found ios/Zenith/GarminCompanionEventEmitter.swift
+[garmin-verify] PASS: Found ios/Zenith/GarminCompanionNativeBridge.swift
+[garmin-verify] PASS: Found ios/Zenith/GarminCompanionNativeBridge.m
+[garmin-verify] PASS: GARMIN_CONNECT_ENABLED feature flag present.
+[garmin-verify] PASS: Garmin companion bridge flags present.
+[garmin-verify] PASS: Profile exposes Garmin companion route.
+[garmin-verify] PASS: Garmin native iOS files are linked in project.pbxproj.
+[garmin-verify] Garmin readiness verification passed.

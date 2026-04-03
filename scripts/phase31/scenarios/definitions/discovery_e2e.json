@@ -1,0 +1,17 @@
+{
+  "scenario_id": "S31-005",
+  "description": "Discovery and usual foods ranking returns stable top suggestions with parity checks",
+  "critical_paths": ["search", "discovery"],
+  "flags": ["FF_DISCOVERY_ENABLED", "FF_USUAL_FOODS_ENABLED", "FF_DUAL_READ_ENABLED"],
+  "client_versions": ["latest", "v2.1.0"],
+  "offline_states": [false, true],
+  "expected_outcomes": {
+    "top_foods_correct": true,
+    "dual_read_parity": "<=0.1%"
+  },
+  "report_paths": {
+    "json": "docs/qa/phase31/scenarios/discovery_e2e_001.json",
+    "md": "docs/qa/phase31/scenarios/discovery_e2e_001.md"
+  },
+  "owner": "QA"
+}

@@ -1,0 +1,58 @@
+project_id = "erdllcmwzqqbevfdknbh"
+
+[functions."delete-me"]
+# We validate the caller inside the function via `auth.getUser()` using the
+# provided bearer token. Disabling gateway JWT verification avoids edge cases
+# where the gateway rejects valid session JWTs while still keeping the function
+# authenticated.
+verify_jwt = false
+
+[functions."food-search"]
+# Function validates caller via `auth.getUser()` and needs to run even if
+# gateway JWT verification is flaky on mobile session tokens.
+verify_jwt = false
+
+[functions."ops-maintenance"]
+# Ops endpoint uses a dedicated x-ops-key secret header and service role RPCs.
+verify_jwt = false
+
+[functions."food-log-v2-write"]
+# Runtime function validates caller via `auth.getUser()` and should not fail at
+# gateway JWT verification for asymmetric session tokens.
+verify_jwt = false
+
+[functions."compute-nutrition-aggregates"]
+# Runtime function validates caller via `auth.getUser()`.
+verify_jwt = false
+
+[functions."runtime-config"]
+# Runtime contract endpoint validates caller via `auth.getUser()`.
+verify_jwt = false
+
+[functions."export-nutrition"]
+# Export endpoint validates caller via `auth.getUser()`.
+verify_jwt = false
+
+[functions."portability-import"]
+# Import endpoint validates caller via `auth.getUser()`.
+verify_jwt = false
+
+[functions."privacy-consent"]
+# Privacy endpoint validates caller via `auth.getUser()`.
+verify_jwt = false
+
+[functions."privacy-data-explanation"]
+# Privacy endpoint validates caller via `auth.getUser()`.
+verify_jwt = false
+
+[functions."privacy-public-shares"]
+# Privacy endpoint validates caller via `auth.getUser()`.
+verify_jwt = false
+
+[functions."admin-ops-control"]
+# Admin endpoint validates caller via `auth.getUser()` and RBAC checks.
+verify_jwt = false
+
+[functions."privacy-retention-enforce"]
+# Ops endpoint uses x-ops-key + service-role RPCs, not end-user JWT auth.
+verify_jwt = false

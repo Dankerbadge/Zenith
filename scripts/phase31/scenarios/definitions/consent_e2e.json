@@ -1,0 +1,17 @@
+{
+  "scenario_id": "S31-008",
+  "description": "Consent gates notifications/public actions and retention policy remains enforceable",
+  "critical_paths": ["privacy_consent", "retention"],
+  "flags": ["FF_NOTIFICATION_CONSENT_ENABLED", "FF_RETENTION_WINDOW_ENFORCEMENT_ENABLED"],
+  "client_versions": ["latest", "v2.1.0"],
+  "offline_states": [false, true],
+  "expected_outcomes": {
+    "consent_gated_actions": true,
+    "retention_enforced": true
+  },
+  "report_paths": {
+    "json": "docs/qa/phase31/scenarios/consent_e2e_001.json",
+    "md": "docs/qa/phase31/scenarios/consent_e2e_001.md"
+  },
+  "owner": "Privacy Owner"
+}

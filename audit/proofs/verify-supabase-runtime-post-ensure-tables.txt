@@ -1,0 +1,4 @@
+Supabase runtime preflight:
+- URL: https://erdllcmwzqqbevfdknbh.supabase.co
+- Anon key: eyJhbGciOi...vYks84
+Supabase runtime check failed: garmin_workouts read probe failed (404)

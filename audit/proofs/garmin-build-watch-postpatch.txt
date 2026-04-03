@@ -1,0 +1,3 @@
+[garmin-watch] Building simulator PRG for device=fenix7
+[garmin-watch] Built: /Users/dankerbadge/Desktop/Zenith/garmin-watch/zenith-garmin-watch/build/ZenithGarmin-fenix7.prg
+garmin_build_watch_exit=0

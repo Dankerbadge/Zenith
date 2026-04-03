@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "createdAt": "2026-03-27T00:43:48.208Z",
+  "totals": {
+    "activeAlerts": 3,
+    "remediated": 0,
+    "skipped": 3,
+    "failed": 0
+  },
+  "results": [
+    {
+      "alertId": "a7c28232-3191-41ec-be40-d843df35de84",
+      "criticalPath": "logging",
+      "action": "skip_existing",
+      "remediationId": "c194baaa-eb23-4f11-af0a-4f47f92eaa4f",
+      "status": "skipped",
+      "closeStatus": 200
+    },
+    {
+      "alertId": "f5aa304d-f617-42bb-aa14-3c2253c57254",
+      "criticalPath": "search",
+      "action": "skip_existing",
+      "remediationId": "97751e28-d971-4ea0-bf17-45d647878ec8",
+      "status": "skipped",
+      "closeStatus": 200
+    },
+    {
+      "alertId": "6b26fa00-7112-47fa-9efe-eb66f2eb79f1",
+      "criticalPath": "sync",
+      "action": "skip_existing",
+      "remediationId": "7b52f53d-fbc8-4e36-b69a-a1b0ce09fff9",
+      "status": "skipped",
+      "closeStatus": 200
+    }
+  ]
+}

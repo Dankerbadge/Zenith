@@ -1,0 +1,16 @@
+Initialising login role...
+Connecting to remote database...
+Do you want to push these migrations to the remote database?
+ • 20260211064000_ensure_runtime_tables_exist.sql
+
+ [Y/n] 
+Applying migration 20260211064000_ensure_runtime_tables_exist.sql...
+NOTICE (42710): extension "uuid-ossp" already exists, skipping
+NOTICE (42P07): relation "garmin_link_tokens" already exists, skipping
+NOTICE (42P07): relation "garmin_device_links" already exists, skipping
+ERROR: function uuid_generate_v4() does not exist (SQLSTATE 42883)
+At statement: 3                                                   
+create table if not exists public.garmin_workouts (               
+  id uuid default uuid_generate_v4() primary key,                 
+                  ^                                               
+Try rerunning the command with --debug to troubleshoot the error.

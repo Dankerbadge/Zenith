@@ -1,0 +1,18 @@
+[F001/F002] Private key material
+garmin-watch/.keys exists?
+garmin-watch/.keys: missing (expected)
+BEGIN PRIVATE KEY matches under garmin-watch:
+<none>
+
+[F004] Vercel metadata directory
+legal-site/.vercel: missing (expected)
+
+[F005] Supabase .temp state dirs
+supabase/.temp: missing (expected)
+ios/supabase/.temp: missing (expected)
+
+[F006] xcuserdata files (excluding Pods)
+<none>
+
+[F007] .DS_Store files (excluding node_modules/Pods/.expo/ios/build/watch build)
+DS_STORE: <none> (expected)

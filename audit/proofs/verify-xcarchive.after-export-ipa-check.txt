@@ -1,0 +1,13 @@
+✅ Archive + exported IPA look upload-ready
+- Archive: /Users/dankerbadge/Desktop/Zenith/ios/build/Zenith-1.0.1-46.autosign-test.xcarchive
+- Version: 1.0.1
+- Build: 46
+- iOS entitlements: HealthKit ✅
+- Watch entitlements: HealthKit ✅
+- Export dir: /Users/dankerbadge/Desktop/Zenith/ios/build/export-appstore-1.0.1-46
+- Exported IPA: /Users/dankerbadge/Desktop/Zenith/ios/build/export-appstore-1.0.1-46/Zenith.ipa
+- Exported iOS signing: Apple Distribution ✅
+- Exported iOS entitlements: aps-environment=production ✅ get-task-allow=false ✅
+- iOS arch: Non-fat file: /Users/dankerbadge/Desktop/Zenith/ios/build/Zenith-1.0.1-46.autosign-test.xcarchive/Products/Applications/Zenith.app/Zenith is architecture: arm64
+- Watch arch: Architectures in the fat file: /Users/dankerbadge/Desktop/Zenith/ios/build/Zenith-1.0.1-46.autosign-test.xcarchive/Products/Applications/Zenith.app/Watch/ZenithWatch Watch App.app/ZenithWatch Watch App are: arm64_32 arm64
+VERIFY_XCARCHIVE_EXIT=0

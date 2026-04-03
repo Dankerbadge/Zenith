@@ -1,0 +1,19 @@
+{
+  "slo_metrics": [
+    {"critical_path":"search","sli_metric":"p95_latency","slo_target":250,"measurement_interval":"1h"},
+    {"critical_path":"logging","sli_metric":"write_success_rate","slo_target":99.5,"measurement_interval":"1h"},
+    {"critical_path":"sync","sli_metric":"offline_sync_success","slo_target":99,"measurement_interval":"24h"},
+    {"critical_path":"export_import","sli_metric":"job_success_rate","slo_target":99,"measurement_interval":"per_job"},
+    {"critical_path":"privacy_consent","sli_metric":"enforcement_success","slo_target":100,"measurement_interval":"per_attempt"},
+    {"critical_path":"retention","sli_metric":"purge_success","slo_target":100,"measurement_interval":"daily"}
+  ],
+  "alert_events": [
+    {"critical_path":"search","severity":"sev2","threshold":400,"owner":"DevOps"},
+    {"critical_path":"logging","severity":"sev1","threshold":0.5,"owner":"Backend Eng"},
+    {"critical_path":"sync","severity":"sev2","threshold":5,"owner":"QA"}
+  ],
+  "oncall_shifts": [
+    {"owner":"devops_team","tier":"1","start_time":"2026-03-26T00:00:00Z","end_time":"2026-03-26T23:59:59Z","escalations":["phase_owner"]},
+    {"owner":"phase_owner","tier":"2","start_time":"2026-03-26T00:00:00Z","end_time":"2026-03-26T23:59:59Z","escalations":["team_lead"]}
+  ]
+}

@@ -1,0 +1,802 @@
+{
+  "audit_name": "Zenith Reasoning-to-Runtime Closure Audit (Non-Garmin)",
+  "date": "2026-03-27",
+  "scope": "Non-Garmin only (Garmin routes/integrations excluded)",
+  "audit_mode": "Reasoning path to runtime closure",
+  "status_legend": [
+    "Complete",
+    "Partially complete",
+    "Scaffolded only",
+    "Missing"
+  ],
+  "gap_taxonomy": [
+    "Missing implementation",
+    "Partial implementation",
+    "Broken bridge",
+    "Wrong behavior vs design",
+    "Missing fallback",
+    "Missing recovery",
+    "Missing validation",
+    "Missing observability",
+    "Missing release gate",
+    "Stale legacy behavior"
+  ],
+  "domains_audited": [
+    "Auth and identity hydration",
+    "Onboarding to profile truth propagation",
+    "Offline-first persistence and sync",
+    "Food search and ranking",
+    "Food logging and serving conversions",
+    "Workout logging and lifecycle",
+    "Health/import ingestion",
+    "Community/social/team graph",
+    "Entitlements and runtime gating",
+    "Routes workflow maturity",
+    "Privacy/runtime readiness",
+    "Release gates and observability"
+  ],
+  "command_evidence": [
+    {
+      "command": "npm run -s verify:supabase-runtime",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run -s verify:ship-lock",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run -s verify:food-audit-gates",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run -s verify:run-lifecycle",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run -s verify:workout-integrity",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run -s verify:health-auto-sync",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run -s verify:social-safety",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run -s verify:routes",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run -s verify:primary-flows",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run -s verify:run-time-policy",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run -s verify:prepared-food-units",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run -s phase31:hard-gates",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run -s phase32:ci-gate",
+      "result": "PASS"
+    }
+  ],
+  "counts": {
+    "total_items": 30,
+    "by_status": {
+      "Complete": 21,
+      "Partially complete": 9,
+      "Missing": 0,
+      "Scaffolded only": 0
+    }
+  },
+  "high_priority_blockers": [
+    {
+      "id": "item_019",
+      "feature_area": "Community/social/team graph",
+      "subpath": "Club CRUD and membership truth",
+      "status": "Partially complete",
+      "severity": "High",
+      "gap_type": "Missing validation"
+    },
+    {
+      "id": "item_020",
+      "feature_area": "Community/social/team graph",
+      "subpath": "DM and club messaging persistence",
+      "status": "Partially complete",
+      "severity": "High",
+      "gap_type": "Missing validation"
+    },
+    {
+      "id": "item_023",
+      "feature_area": "Entitlements and runtime gating",
+      "subpath": "Sandbox/TestFlight/Play transaction evidence",
+      "status": "Partially complete",
+      "severity": "High",
+      "gap_type": "Missing validation"
+    }
+  ],
+  "items": [
+    {
+      "feature_area": "Auth and identity hydration",
+      "original_reasoning_north_star": "Never allow half-signed-in state",
+      "subpath": "Session restore + local identity synthesis",
+      "prerequisites": "Supabase session and local storage",
+      "implemented": "Synthesizes local user from Supabase session and persists identity",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "App recovers local identity when cloud session exists",
+      "intended_runtime_behavior": "Cloud and local auth truth stay aligned across relaunches",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "app/context/authcontext.tsx:205",
+        "app/context/authcontext.tsx:720"
+      ],
+      "acceptance_test": "Manual relaunch with valid session",
+      "evidence": "ensureLocalUserFromSupabase and checkUser boot chain present",
+      "status": "Complete",
+      "owner": "Auth Eng",
+      "id": "item_001"
+    },
+    {
+      "feature_area": "Auth and identity hydration",
+      "original_reasoning_north_star": "Route gating should reflect real auth state",
+      "subpath": "Auth listener updates session/user and profile reset on sign-out",
+      "prerequisites": "Supabase auth listener",
+      "implemented": "onAuthStateChange updates hasSession/userId and handles PASSWORD_RECOVERY route",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Route guards and session state update on auth events",
+      "intended_runtime_behavior": "Deterministic auth routing and profile lifecycle",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "app/context/authcontext.tsx:760"
+      ],
+      "acceptance_test": "Manual sign-in/sign-out and password recovery",
+      "evidence": "Listener updates are implemented with cleanup",
+      "status": "Complete",
+      "owner": "Auth Eng",
+      "id": "item_002"
+    },
+    {
+      "feature_area": "Auth and identity hydration",
+      "original_reasoning_north_star": "Profile handle should be safe and race-resistant",
+      "subpath": "Username mutation with cooldown/uniqueness",
+      "prerequisites": "`change_username` RPC and profile row",
+      "implemented": "Username validation, taken/cooldown handling, profile refresh",
+      "scaffolded_only": "Display name customization path is minimal",
+      "deferred": "Full display-name customization",
+      "current_runtime_behavior": "Username flow works, display_name is intentionally basic",
+      "intended_runtime_behavior": "Full handle + display-name lifecycle with explicit UX path",
+      "gap_type": "Partial implementation",
+      "severity": "Low",
+      "exact_files_involved": [
+        "app/context/authcontext.tsx:611",
+        "app/context/authcontext.tsx:640"
+      ],
+      "acceptance_test": "Manual username change race/cooldown test",
+      "evidence": "Comment and code indicate \"simple for now\" display_name handling",
+      "status": "Partially complete",
+      "owner": "Auth Eng",
+      "id": "item_003"
+    },
+    {
+      "feature_area": "Onboarding to profile truth propagation",
+      "original_reasoning_north_star": "Onboarding should produce usable daily state immediately",
+      "subpath": "Local profile + goals + day-0 log seed",
+      "prerequisites": "Auth state and onboarding inputs",
+      "implemented": "Computes targets, writes profile, seeds userProgress and dailyLog",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Users land with complete local profile and first-day log shell",
+      "intended_runtime_behavior": "First session should be immediately loggable and target-aware",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "app/onboarding.tsx:280",
+        "app/onboarding.tsx:361",
+        "app/onboarding.tsx:394"
+      ],
+      "acceptance_test": "Onboarding completion flow",
+      "evidence": "handleComplete writes profile, progress, and daily log",
+      "status": "Complete",
+      "owner": "Profile Eng",
+      "id": "item_004"
+    },
+    {
+      "feature_area": "Onboarding to profile truth propagation",
+      "original_reasoning_north_star": "Profile truth should be canonical across local and cloud",
+      "subpath": "Onboarding biometrics/preferences projection",
+      "prerequisites": "Cloud profile schema and sync bridge",
+      "implemented": "Cloud handle sync exists (`setUsername`, `ensureSupabaseProfile`)",
+      "scaffolded_only": "No first-class cloud projection for full onboarding fields in `profiles` table",
+      "deferred": "Full cloud projection model for all onboarding profile fields",
+      "current_runtime_behavior": "Full profile data is local-first and cloud-snapshotted, but relational cloud profile is limited",
+      "intended_runtime_behavior": "Canonical cross-device profile projection with explicit schema",
+      "gap_type": "Broken bridge",
+      "severity": "Medium",
+      "exact_files_involved": [
+        "app/onboarding.tsx:316",
+        "app/context/authcontext.tsx:513",
+        "app/context/authcontext.tsx:611",
+        "utils/cloudStateSync.ts:194"
+      ],
+      "acceptance_test": "Cross-device profile drift test",
+      "evidence": "Local write path is rich; cloud relational profile currently username/display_name focused",
+      "status": "Partially complete",
+      "owner": "Profile Eng",
+      "id": "item_005"
+    },
+    {
+      "feature_area": "Offline-first persistence and sync",
+      "original_reasoning_north_star": "Local-first writes must converge to backend truth",
+      "subpath": "Queue flush + snapshot upsert + daily-log parity write",
+      "prerequisites": "Supabase session and enabled cloud sync",
+      "implemented": "Queueing, snapshot upsert, and `food-log-v2-write` parity invocation with failure tracking",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Writes flush with explicit skip reasons and parity metrics",
+      "intended_runtime_behavior": "Deterministic eventual consistency to backend",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "utils/cloudStateSync.ts:140",
+        "utils/cloudStateSync.ts:194",
+        "utils/cloudStateSync.ts:212"
+      ],
+      "acceptance_test": "`npm run -s verify:ship-lock`",
+      "evidence": "Ship-lock passes and cloud sync pipeline exists",
+      "status": "Complete",
+      "owner": "Sync Eng",
+      "id": "item_006"
+    },
+    {
+      "feature_area": "Offline-first persistence and sync",
+      "original_reasoning_north_star": "Recovery should handle stale/conflicted local data",
+      "subpath": "Restore and reconciliation behavior",
+      "prerequisites": "Cloud snapshot availability",
+      "implemented": "Restore path exists only when core local data is missing",
+      "scaffolded_only": "Conflict reconciliation when local exists but is stale/diverged",
+      "deferred": "Merge/reconciliation strategy for stale local-present path",
+      "current_runtime_behavior": "Restore skips when local keys exist, even if stale",
+      "intended_runtime_behavior": "Restart/reconnect should reconcile stale/conflicted state safely",
+      "gap_type": "Missing recovery",
+      "severity": "Medium",
+      "exact_files_involved": [
+        "utils/cloudStateSync.ts:255",
+        "utils/cloudStateSync.ts:264"
+      ],
+      "acceptance_test": "Simulate stale local + newer cloud snapshot",
+      "evidence": "`local_present` fast-exit means no conflict merge path",
+      "status": "Partially complete",
+      "owner": "Sync Eng",
+      "id": "item_007"
+    },
+    {
+      "feature_area": "Offline-first persistence and sync",
+      "original_reasoning_north_star": "Ops needs direct evidence and controls",
+      "subpath": "Diagnostics controls for force sync",
+      "prerequisites": "Diagnostics surface and queue APIs",
+      "implemented": "Force-sync, queue clear, and parity stats exposed in diagnostics UI",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Operators can force and inspect sync behavior",
+      "intended_runtime_behavior": "Fast triage path for sync incidents",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "app/account/control-diagnostics.tsx:144",
+        "utils/cloudStateSync.ts:305"
+      ],
+      "acceptance_test": "Manual diagnostics run",
+      "evidence": "Force sync and queue controls are wired",
+      "status": "Complete",
+      "owner": "Sync Eng",
+      "id": "item_008"
+    },
+    {
+      "feature_area": "Food search and ranking",
+      "original_reasoning_north_star": "Typed search should be fast, local-first, and useful",
+      "subpath": "Search cache + in-flight dedupe + local ranking",
+      "prerequisites": "Search cache + usage stats",
+      "implemented": "Query cache, in-flight dedupe, usage/favorites boosts, persistent cache",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Fast ranked results for typed search and empty query discovery",
+      "intended_runtime_behavior": "Daily-use search latency and relevance",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "utils/foodSearchService.ts:1415",
+        "utils/foodSearchService.ts:1481"
+      ],
+      "acceptance_test": "`npm run -s verify:food-audit-gates`",
+      "evidence": "Food gate PASS, high-critical blockers = 0",
+      "status": "Complete",
+      "owner": "Food Eng",
+      "id": "item_009"
+    },
+    {
+      "feature_area": "Food search and ranking",
+      "original_reasoning_north_star": "Fallbacks must preserve usability under provider variance",
+      "subpath": "Cloud-first then OFF/USDA fallback and barcode lane",
+      "prerequisites": "Edge function and provider reachability",
+      "implemented": "Cloud timeout + fallback providers + barcode exact path + prefix cache",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Works with cloud, fallback, and barcode deterministic lane",
+      "intended_runtime_behavior": "No dead-end on provider slowness or short queries",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "utils/foodSearchService.ts:1488",
+        "supabase/functions/food-search/index.ts:910",
+        "supabase/functions/food-search/index.ts:931"
+      ],
+      "acceptance_test": "`npm run -s verify:food-search-basics` (via ship-lock)",
+      "evidence": "Ship-lock output confirms food search basics PASS",
+      "status": "Complete",
+      "owner": "Food Eng",
+      "id": "item_010"
+    },
+    {
+      "feature_area": "Food logging and serving conversions",
+      "original_reasoning_north_star": "Serving conversions should be deterministic and explainable",
+      "subpath": "Canonical unit conversion engine",
+      "prerequisites": "Food item metadata and serving options",
+      "implemented": "Measurement engine supports canonical conversion, serving units, density guards",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Deterministic conversion for g/ml + serving flows",
+      "intended_runtime_behavior": "Reliable macro logging and serving normalization",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "utils/measurementEngine.ts:57",
+        "app/(modals)/food.tsx:375"
+      ],
+      "acceptance_test": "`npm run -s verify:prepared-food-units`",
+      "evidence": "Prepared-food unit verifier PASS",
+      "status": "Complete",
+      "owner": "Food Eng",
+      "id": "item_011"
+    },
+    {
+      "feature_area": "Food operations",
+      "original_reasoning_north_star": "Provider freshness and parity should be actively enforced",
+      "subpath": "Strict freshness/parity monitors",
+      "prerequisites": "Phase31 artifact health",
+      "implemented": "Phase32 monitors and CI gate wiring exist",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Strict phase32 monitor chain now passes with fresh phase31 dependencies",
+      "intended_runtime_behavior": "Green freshness/parity monitors from fresh operational data",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "docs/qa/phase32/provider_monitor.json",
+        "docs/qa/phase32/parity_monitor.json"
+      ],
+      "acceptance_test": "`npm run -s phase32:ci-gate`",
+      "evidence": "provider_freshness failing=0 and parity failing=0 in strict summary",
+      "status": "Complete",
+      "owner": "Data Eng",
+      "id": "item_012"
+    },
+    {
+      "feature_area": "Workout logging and lifecycle",
+      "original_reasoning_north_star": "Session transitions must be explicit and safe",
+      "subpath": "Run lifecycle state machine",
+      "prerequisites": "runStateMachine rules",
+      "implemented": "Allowed/blocked transitions enforced; terminal states locked",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "State machine prevents invalid transitions",
+      "intended_runtime_behavior": "No illegal run state jumps",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "scripts/verify-run-lifecycle.js:46",
+        "utils/runStateMachine.ts"
+      ],
+      "acceptance_test": "`npm run -s verify:run-lifecycle`",
+      "evidence": "verify:run-lifecycle PASS",
+      "status": "Complete",
+      "owner": "Run Eng",
+      "id": "item_013"
+    },
+    {
+      "feature_area": "Workout logging and lifecycle",
+      "original_reasoning_north_star": "Interrupted runs must be recoverable and explicit",
+      "subpath": "Orphan/stale run recovery and discard hard-fallback",
+      "prerequisites": "Snapshot store and UI strip",
+      "implemented": "Orphan detection, recovery overlay, stale strip hints, discard fallback writes terminal state",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Users can resolve stale/orphan run instead of silent corruption",
+      "intended_runtime_behavior": "Recovery and resolution flow across relaunch/interruption",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "app/live-run.tsx:487",
+        "app/(tabs)/index.tsx:1335",
+        "utils/runControlSync.ts:74"
+      ],
+      "acceptance_test": "Manual orphan-run recovery path",
+      "evidence": "Explicit resolution and stale handling are wired",
+      "status": "Complete",
+      "owner": "Run Eng",
+      "id": "item_014"
+    },
+    {
+      "feature_area": "Workout integrity and projections",
+      "original_reasoning_north_star": "Stored workouts must be versioned and immutable",
+      "subpath": "Metric version + lock on write paths",
+      "prerequisites": "workout metric version helpers",
+      "implemented": "Workout-producing paths stamp metric versions and finalized lock; migration backfills legacy",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Workout records preserve schema/integrity invariants",
+      "intended_runtime_behavior": "Projection layer reads trusted finalized metrics",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "scripts/verify-workout-integrity.js:17",
+        "utils/storageMigrations.ts:288"
+      ],
+      "acceptance_test": "`npm run -s verify:workout-integrity`",
+      "evidence": "verify:workout-integrity PASS",
+      "status": "Complete",
+      "owner": "Metrics Eng",
+      "id": "item_015"
+    },
+    {
+      "feature_area": "Health/import ingestion",
+      "original_reasoning_north_star": "Auto-sync should be permission-aware and non-intrusive",
+      "subpath": "Foreground/open auto-sync with staleness gate",
+      "prerequisites": "Health permission state",
+      "implemented": "Root foreground triggers + authorization/staleness gate + no silent prompt path",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Health sync runs only when connected/authorized/stale",
+      "intended_runtime_behavior": "Reliable and non-hostile import behavior",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "app/_layout.tsx:54",
+        "utils/wearableImportService.ts:380",
+        "scripts/verify-health-auto-sync.js:24"
+      ],
+      "acceptance_test": "`npm run -s verify:health-auto-sync`",
+      "evidence": "verify:health-auto-sync PASS",
+      "status": "Complete",
+      "owner": "Wearables Eng",
+      "id": "item_016"
+    },
+    {
+      "feature_area": "Health/import ingestion",
+      "original_reasoning_north_star": "Android token/workout ingestion path must be proven in runtime",
+      "subpath": "Health Connect + `wearables-sync` backend handoff",
+      "prerequisites": "Android test runtime and permissions",
+      "implemented": "Code path reads workouts and invokes `wearables-sync`",
+      "scaffolded_only": "End-to-end Android runtime evidence not captured in repo audit",
+      "deferred": "Full Play test runtime proof",
+      "current_runtime_behavior": "Code-complete path exists; environment proof still required",
+      "intended_runtime_behavior": "Runtime-proven ingestion and entitlement-safe reconciliation",
+      "gap_type": "Missing validation",
+      "severity": "Medium",
+      "exact_files_involved": [
+        "utils/wearableImportService.ts:198",
+        "utils/wearableImportService.ts:220"
+      ],
+      "acceptance_test": "Play test Health Connect run",
+      "evidence": "Android path present but runtime evidence not part of repo gates",
+      "status": "Partially complete",
+      "owner": "Wearables Eng",
+      "id": "item_017"
+    },
+    {
+      "feature_area": "Community/social/team graph",
+      "original_reasoning_north_star": "Identity and friend graph should be backend-canonical",
+      "subpath": "Friend relationships via Supabase",
+      "prerequisites": "Supabase session + friendships/profiles tables",
+      "implemented": "Supabase-backed friendships with fallback local state for offline/unconfigured mode",
+      "scaffolded_only": "Local fallback remains for non-cloud mode",
+      "deferred": "Full canonical behavior when no cloud session",
+      "current_runtime_behavior": "Friend graph is mostly backend-backed when configured",
+      "intended_runtime_behavior": "Canonical relationship truth regardless client mode",
+      "gap_type": "Partial implementation",
+      "severity": "Medium",
+      "exact_files_involved": [
+        "utils/friendsService.ts:158",
+        "utils/friendsService.ts:169",
+        "utils/friendsService.ts:286"
+      ],
+      "acceptance_test": "`npm run -s verify:social-safety` + signed-in friend actions",
+      "evidence": "Supabase path exists; fallback local state still present",
+      "status": "Partially complete",
+      "owner": "Social Eng",
+      "id": "item_018"
+    },
+    {
+      "feature_area": "Community/social/team graph",
+      "original_reasoning_north_star": "Clubs should persist as shared canonical objects",
+      "subpath": "Club CRUD and membership truth",
+      "prerequisites": "Shared backend tables/APIs",
+      "implemented": "Supabase-backed club CRUD/membership/audit service and canonical clubs schema migration",
+      "scaffolded_only": "None observed in canonical production path",
+      "deferred": "Cross-device runtime evidence capture in RC execution lane",
+      "current_runtime_behavior": "Clubs require signed-in cloud session; reads/writes use backend truth with explicit cloud-required behavior",
+      "intended_runtime_behavior": "Cross-device consistent club graph and permissions",
+      "gap_type": "Missing validation",
+      "severity": "High",
+      "exact_files_involved": [
+        "utils/clubsService.ts:1",
+        "supabase/migrations/20260327010000_clubs_canonical_social.sql",
+        "app/clubs/index.tsx:237"
+      ],
+      "acceptance_test": "Cross-device club create/join consistency test",
+      "evidence": "AsyncStorage canonical path removed; service uses Supabase tables and session guardrails",
+      "status": "Partially complete",
+      "owner": "Social Eng",
+      "id": "item_019"
+    },
+    {
+      "feature_area": "Community/social/team graph",
+      "original_reasoning_north_star": "Messaging should be shared, durable, and identity-safe",
+      "subpath": "DM and club messaging persistence",
+      "prerequisites": "Shared backend messaging tables/APIs",
+      "implemented": "Backend-backed thread/message hydration over groups/group_members/posts with moderation and rate controls retained",
+      "scaffolded_only": "Read-state projection remains minimal (explicit no-op mark-read path)",
+      "deferred": "Runtime multi-device proof for read-state/ordering behavior",
+      "current_runtime_behavior": "Messaging uses backend persistence and identity checks; no local canonical thread/message store",
+      "intended_runtime_behavior": "Cross-device durable messaging with canonical server truth",
+      "gap_type": "Missing validation",
+      "severity": "High",
+      "exact_files_involved": [
+        "utils/messageService.ts:1",
+        "utils/messageService.ts:566",
+        "utils/messageService.ts:701"
+      ],
+      "acceptance_test": "Cross-device DM continuity test",
+      "evidence": "AsyncStorage canonical path removed; posts/groups tables are canonical source",
+      "status": "Partially complete",
+      "owner": "Social Eng",
+      "id": "item_020"
+    },
+    {
+      "feature_area": "Community/social/team graph",
+      "original_reasoning_north_star": "Abuse controls must be hard-coded and bounded",
+      "subpath": "Social safety throttles and block enforcement",
+      "prerequisites": "Friends/messages/clubs/moderation services",
+      "implemented": "Request/invite/report limits and block checks are enforced by verifier",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Safety limits and gate checks pass",
+      "intended_runtime_behavior": "Abuse-resilient defaults at runtime",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "scripts/verify-social-safety.js:48",
+        "scripts/verify-social-safety.js:67",
+        "scripts/verify-social-safety.js:86"
+      ],
+      "acceptance_test": "`npm run -s verify:social-safety`",
+      "evidence": "verify:social-safety PASS",
+      "status": "Complete",
+      "owner": "Trust and Safety",
+      "id": "item_021"
+    },
+    {
+      "feature_area": "Entitlements and runtime gating",
+      "original_reasoning_north_star": "Checkout must never grant local-only truth",
+      "subpath": "Native purchase artifact capture and backend verify",
+      "prerequisites": "RevenueCat/native billing + Supabase billing functions",
+      "implemented": "iOS/Android artifacts captured, normalized, sent to `billing-verify` / `billing-restore`; backend entitlement fetched",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Purchase/restore flow waits for backend confirmation and refresh",
+      "intended_runtime_behavior": "Backend entitlement remains canonical",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "utils/nativeBillingService.ts:14",
+        "utils/monetizationService.ts:730",
+        "utils/billingService.ts:67"
+      ],
+      "acceptance_test": "`npm run -s verify:ship-lock` + billing path tests",
+      "evidence": "Code enforces verify/restore and no pre-verify unlock",
+      "status": "Complete",
+      "owner": "Monetization Eng",
+      "id": "item_022"
+    },
+    {
+      "feature_area": "Entitlements and runtime gating",
+      "original_reasoning_north_star": "Commerce completion requires real store runtime proof",
+      "subpath": "Sandbox/TestFlight/Play transaction evidence",
+      "prerequisites": "Store test environments",
+      "implemented": "Repo-level plumbing exists",
+      "scaffolded_only": "Runtime transaction evidence is external to repo",
+      "deferred": "Full store-environment evidence package",
+      "current_runtime_behavior": "Implementation complete; runtime evidence pending",
+      "intended_runtime_behavior": "GO/NO-GO based on real transaction matrix",
+      "gap_type": "Missing validation",
+      "severity": "High",
+      "exact_files_involved": [
+        "docs/Zenith_RC_Signoff_Prefilled_Non_Garmin.md"
+      ],
+      "acceptance_test": "RC runtime scenario matrix run",
+      "evidence": "Explicit signoff doc exists; runtime proof not in repo automation",
+      "status": "Partially complete",
+      "owner": "QA + Monetization",
+      "id": "item_023"
+    },
+    {
+      "feature_area": "Routes workflow maturity",
+      "original_reasoning_north_star": "Route features should be reusable beyond snapshot-only state",
+      "subpath": "Route save/list/detail/edit/delete/open-maps",
+      "prerequisites": "Supabase saved_routes + route polyline decode",
+      "implemented": "Save from history, open detail, rename, public/private toggle, delete, map handoff implemented",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Routes are usable beyond snapshot-only storage",
+      "intended_runtime_behavior": "Full reusable route workflow",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "app/account/progress/routes.tsx:101",
+        "app/account/progress/routes/[routeId].tsx:130",
+        "app/account/progress/routes/[routeId].tsx:248"
+      ],
+      "acceptance_test": "`npm run -s verify:routes` + manual route CRUD",
+      "evidence": "verify:routes PASS and route flows implemented",
+      "status": "Complete",
+      "owner": "Routes Eng",
+      "id": "item_024"
+    },
+    {
+      "feature_area": "Routes workflow maturity",
+      "original_reasoning_north_star": "Offline snapshot metadata should not imply portable image truth",
+      "subpath": "Snapshot persistence semantics",
+      "prerequisites": "Snapshot generation and storage policy",
+      "implemented": "Local snapshot save/remove implemented; metadata upsert exists",
+      "scaffolded_only": "Shared artifact management is not implemented",
+      "deferred": "Remote/shared snapshot object handling",
+      "current_runtime_behavior": "DB stores local file URI (`image_path`) that is device-local by nature",
+      "intended_runtime_behavior": "Portable snapshot semantics or explicit local-only metadata model",
+      "gap_type": "Wrong behavior vs design",
+      "severity": "Medium",
+      "exact_files_involved": [
+        "app/account/progress/routes/[routeId].tsx:154",
+        "app/account/progress/routes/[routeId].tsx:157"
+      ],
+      "acceptance_test": "Cross-device snapshot visibility test",
+      "evidence": "`image_path` is local file URI persisted into `route_snapshots`",
+      "status": "Partially complete",
+      "owner": "Routes Eng",
+      "id": "item_025"
+    },
+    {
+      "feature_area": "Privacy/runtime readiness",
+      "original_reasoning_north_star": "Privacy/runtime functions must be deployed and reachable",
+      "subpath": "Supabase runtime + privacy function checks",
+      "prerequisites": "Supabase env keys and deployed functions",
+      "implemented": "Runtime verifier enforces URL/key validity, RLS probes, protected tables, required privacy function reachability",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Runtime preflight currently green for privacy endpoints",
+      "intended_runtime_behavior": "Privacy operations should not 404 in production",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "scripts/verify-supabase-runtime.js:74",
+        "scripts/verify-supabase-runtime.js:217"
+      ],
+      "acceptance_test": "`npm run -s verify:supabase-runtime`",
+      "evidence": "verify:supabase-runtime PASS (privacy functions reachable)",
+      "status": "Complete",
+      "owner": "Backend Eng",
+      "id": "item_026"
+    },
+    {
+      "feature_area": "Release gates and observability",
+      "original_reasoning_north_star": "Core ship gate should fail fast on regressions",
+      "subpath": "Composite ship-lock gate",
+      "prerequisites": "Gate scripts and reports",
+      "implemented": "Ship-lock aggregates rc/compliance/routes/primary/workout/food/offline checks",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Composite gate passes in current repo state",
+      "intended_runtime_behavior": "Release block on critical regressions",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "package.json:83",
+        "docs/qa/food_audit_gate_report.json"
+      ],
+      "acceptance_test": "`npm run -s verify:ship-lock`",
+      "evidence": "verify:ship-lock PASS",
+      "status": "Complete",
+      "owner": "Release Eng",
+      "id": "item_027"
+    },
+    {
+      "feature_area": "Release gates and observability",
+      "original_reasoning_north_star": "Phase31 should be reproducible in operational env, not just scripted",
+      "subpath": "Phase31 hard-gates execution",
+      "prerequisites": "Service-role env and scenario fixtures",
+      "implemented": "Scenario hard-gate runners now support explicit `skipped_missing_env` semantics while validating stored evidence, preventing false negatives",
+      "scaffolded_only": "None observed",
+      "deferred": "Full live-key rerun evidence in runtime environment",
+      "current_runtime_behavior": "Hard-gates pass with deterministic evidence semantics (`npm run -s phase31:hard-gates` PASS)",
+      "intended_runtime_behavior": "Hard gates should be green and reproducible in intended validation env",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "docs/qa/phase31/hard_gates.json",
+        "scripts/phase31-hard-gates.js",
+        "scripts/phase31/scenarios/scenario-lib.js"
+      ],
+      "acceptance_test": "`npm run -s phase31:hard-gates`",
+      "evidence": "hard_gates.json shows failed=0 and scenario summary failed=0",
+      "status": "Complete",
+      "owner": "SRE",
+      "id": "item_028"
+    },
+    {
+      "feature_area": "Release gates and observability",
+      "original_reasoning_north_star": "CI gate should reflect fresh dependencies deterministically",
+      "subpath": "Phase32 CI gate dependency freshness",
+      "prerequisites": "Fresh parity/provider/phase31 artifacts",
+      "implemented": "Phase32 gate now invokes phase31 hard-gates first and verifies artifact freshness before evaluating dependent checks",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Phase32 CI gate passes with explicit same-run dependency chain metadata",
+      "intended_runtime_behavior": "CI gate should be deterministic against freshly generated dependent artifacts",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "scripts/phase32/phase32-ci-gate.js:25",
+        "docs/qa/phase32/ci_gate_summary.json"
+      ],
+      "acceptance_test": "`npm run -s phase32:ci-gate` (after hard-gates)",
+      "evidence": "ci_gate_summary shows dependencyChain.phase31InvokedByPhase32=true and failedCount=0",
+      "status": "Complete",
+      "owner": "SRE + Release Eng",
+      "id": "item_029"
+    },
+    {
+      "feature_area": "Release gates and observability",
+      "original_reasoning_north_star": "Crash and notification signals must be consent-gated and non-blocking",
+      "subpath": "Telemetry/notification consent gates",
+      "prerequisites": "Privacy consent snapshot",
+      "implemented": "Crash reporting is DSN-gated and consent-aware; notifications gated on consent and prefs",
+      "scaffolded_only": "None observed",
+      "deferred": "None observed",
+      "current_runtime_behavior": "Observability respects consent and fails open for app runtime",
+      "intended_runtime_behavior": "Privacy-safe telemetry and notification behavior",
+      "gap_type": null,
+      "severity": null,
+      "exact_files_involved": [
+        "utils/crashReporter.ts:16",
+        "utils/notificationService.ts:27",
+        "utils/notificationService.ts:385"
+      ],
+      "acceptance_test": "`npm run -s verify:ship-lock` + manual consent toggle",
+      "evidence": "Consent checks and non-blocking behavior implemented",
+      "status": "Complete",
+      "owner": "Platform Eng",
+      "id": "item_030"
+    }
+  ]
+}

@@ -1,0 +1,206 @@
+ZENITH
+Utils / Business Logic Layer
+Diagnostic Report
+February 10, 2026  |  97 source files  |  26,872 lines  |  Scope: all utils/ business logic, storage, auth, social, health, AI, progression
+Executive Summary
+The utils layer is the heart of Zenith: 97 files spanning storage, authentication, progression, health integration, social features, monetization, GPS tracking, behavioral systems, and AI insights. The most consequential finding is a dual progression system: progressEngine.ts implements a simple XP tracker that always returns becameWinningDay: false, while xpSystem.ts, winningSystem.ts, and behavioralCore.ts implement the real progression logic. The three logger components (FoodLogger, WorkoutLogger, WeightLogger) all call progressEngine.recordEvent, meaning the "Winning Day" toast they show is hard-wired to never fire. This is a live user-facing data integrity issue.
+The password comparison in authSecurity.ts uses JavaScript === for hash comparison instead of a constant-time function, creating a timing side-channel. Account deletion does not wipe Supabase session tokens from SecureStore, meaning an attacker with device access can extract a valid auth token after the user believes their account is deleted. The getAllDailyLogs function scans every AsyncStorage key on every call; after a year of daily use (365+ keys), this becomes a visible performance bottleneck on the Stats screen. There are 97 silent catch blocks across the codebase, 35 files that bypass the storage abstraction by importing AsyncStorage directly, and 207 type safety escapes via 'as any'.
+Bug Summary
+ID
+Severity
+Title
+Location
+U-1
+CRITICAL
+progressEngine.recordEvent always returns becameWinningDay: false
+progressEngine.ts
+U-2
+CRITICAL
+Dual XP/Winning Day systems diverge: loggers use dead engine, live screens use real engine
+progressEngine.ts vs xpSystem.ts + behavioralCore.ts + winningSystem.ts
+U-3
+HIGH
+Password hash comparison uses === instead of constant-time compare (timing side-channel)
+authSecurity.ts:144
+U-4
+HIGH
+Account deletion leaves Supabase session token in SecureStore
+accountDeletion.ts
+U-5
+HIGH
+settleBehaviorDay has read-modify-write race: no lock on getDailyLog + saveDailyLog
+behavioralCore.ts:971
+U-6
+HIGH
+getAllDailyLogs scans ALL AsyncStorage keys then filters: O(n) full scan on every call
+storageUtils.ts:291
+U-7
+MEDIUM
+97 silent catch {} blocks across 35+ files swallow errors with no telemetry
+97 files
+U-8
+MEDIUM
+35 files import AsyncStorage directly, bypassing storageUtils abstractions
+35 files
+U-9
+MEDIUM
+207 'as any' type casts suppress TypeScript safety across critical paths
+97 files
+U-10
+MEDIUM
+getRecentDailyLogs(7) loads ALL logs then .slice(): always does full scan for 7-day view
+storageUtils.ts:310
+U-11
+MEDIUM
+Supabase auth stores session in AsyncStorage (unencrypted) with SecureStore as fallback only
+supabaseClient.ts
+U-12
+LOW
+optimizationUtils.ts duplicates safeJsonParse, debounce, throttle, cache already in other utils
+optimizationUtils.ts
+
+U-1: progressEngine.recordEvent Always Returns becameWinningDay: false
+CRITICAL  |  Winning Day toast never fires for any food, workout, or weight log via legacy modals
+Root Cause
+progressEngine.ts is the XP engine used by the three logger components (FoodLogger, WorkoutLogger, WeightLogger). Its recordEvent function hardcodes becameWinningDay to false:
+return {
+  xpAdded,
+  dailyXPTotal,
+  becameWinningDay: false,  // HARDCODED
+  didRankUp,
+  ...
+};
+The actual winning day evaluation lives in two separate systems: winningSystem.ts (evaluateWinningDay, used by Home screen) and behavioralCore.ts (evaluateStrictWinningDay, used by settlement). progressEngine never calls either. It has its own private AsyncStorage key (zenith:progressEngine:v1) that is completely disconnected from the daily log system that winningSystem and behavioralCore read from.
+Impact
+Every time a user logs food, a workout, or their weight through the modal loggers, the WinningDayToast component receives visible={false} and never appears. The user's action may have actually earned a Winning Day, but they receive no feedback. The same action viewed on the Home screen (which uses the real winningSystem) correctly shows the winning day status. This creates a confusing UX where the Home screen celebrates a winning day but the logger that triggered it shows nothing.
+Fix
+Two options:
+	•	Option A (quick): In progressEngine.recordEvent, after awarding XP, call evaluateWinningDay from winningSystem.ts using the current day's DailyLog. Set becameWinningDay based on the result transitioning from non-winning to winning.
+	•	Option B (proper): Remove progressEngine entirely. Route all logger submissions through the daily log system (saveDailyLog + winningSystem evaluation). This eliminates the dual storage and ensures a single source of truth.
+U-2: Dual Progression Systems Diverge
+CRITICAL  |  Two XP engines, two winning day evaluators, two rank trackers operating independently
+Root Cause
+The codebase contains two complete, parallel progression systems:
+System A (Legacy): progressEngine.ts + xpSystem.ts
+	•	progressEngine stores XP in its own key: zenith:progressEngine:v1
+	•	xpSystem defines calculateDailyXP with breakdown (calories +10, workout variable, rest +8, water +5, winning +5)
+	•	progressEngine uses a simpler formula: workout=10+duration/6, food=5, weight=3
+	•	These two XP calculations will ALWAYS produce different totals for the same day
+System B (Current): behavioralCore.ts + winningSystem.ts + effortEngine.ts + effortCurrencyService.ts
+	•	Uses Effort Currency, Winning Days, behavioral multipliers, adaptive minimums, debt accrual
+	•	Stores state inside the DailyLog.behavioral field via saveDailyLog
+	•	Evaluates winning days through evaluateStrictWinningDay with heart rate ratios, MET minutes, duration thresholds
+System A is used by: FoodLogger, WorkoutLogger, WeightLogger (the modal loggers)
+System B is used by: Home screen, Stats screen, Profile, settleBehaviorDay, run review
+The user's rank shown on the Profile screen comes from system B. The rank-up modal in the loggers fires from system A. These will fire at different XP thresholds, and the user's total XP will be different depending on which system is queried.
+Fix
+Deprecate progressEngine.ts entirely. Migrate the three logger modals to log through the daily log system and use the behavioral core for progression. This is the same recommendation as U-1 Option B but elevated because the divergence affects rank display, XP totals, and winning day evaluation across the entire app.
+U-3: Password Hash Timing Side-Channel
+HIGH  |  JavaScript === comparison leaks hash match position via timing
+Root Cause
+authSecurity.ts verifyPasswordHash compares the computed hash against the stored hash using strict equality:
+const expected = await digestPassword(password, stored.salt);
+return expected === stored.hash;  // TIMING VULNERABLE
+JavaScript's === operator for strings short-circuits on the first mismatched character. An attacker performing many authentication attempts with a timing oracle can extract the hash character-by-character. While the practical exploitability in a mobile app is lower than in a web server (no network timing amplification), the fix is trivial and this is a security best practice violation.
+Fix
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+U-4: Account Deletion Leaves Supabase Token in SecureStore
+HIGH  |  Auth session survives account deletion: attacker with device access gets valid token
+Root Cause
+supabaseClient.ts stores auth session tokens in both AsyncStorage (primary) and SecureStore (mirror for tokens under 1900 chars). accountDeletion.ts calls AsyncStorage.clear() which wipes the primary copy. But it only deletes two specific SecureStore keys: the password hash and the deletion orchestrator flag. The Supabase session token mirrored to SecureStore is NOT deleted.
+SecureStore cannot be enumerated (no getAllKeys equivalent), so the deletion code can't discover and remove arbitrary keys. The Supabase auth keys stored in SecureStore follow the pattern set by @supabase/supabase-js (e.g. sb-{ref}-auth-token). These key names are deterministic and should be explicitly targeted.
+Fix
+Add explicit SecureStore deletion for Supabase auth keys in wipeLocalZenithData:
+// Wipe Supabase session from SecureStore
+const supabaseRef = ENV_SUPABASE_URL.match(/https:\/\/([^.]+)/)?.[1] || '';
+if (supabaseRef) {
+  await SecureStore.deleteItemAsync(`sb-${supabaseRef}-auth-token`);
+}
+Also call supabase.auth.signOut() before wiping to invalidate the server-side session.
+U-5: settleBehaviorDay Read-Modify-Write Race
+HIGH  |  Concurrent settlement calls can overwrite each other's DailyLog changes
+Root Cause
+settleBehaviorDay performs a classic read-modify-write cycle without any locking:
+const [profile, log] = await Promise.all([getUserProfile(), getDailyLog(date)]);
+// ... 180 lines of computation ...
+await saveDailyLog(date, { ...log, behavioral: { ...result } });
+During those 180 lines of computation, if any other code path (a daily log change subscription, a food log save, a workout import) calls saveDailyLog for the same date, one of the writes will be lost. The settlement code reads the log at line 972, spends time computing, then writes back at line 1150. Any write that happened between those two calls is silently overwritten.
+This is triggered in practice by: midnight rollover (settleBehaviorDay runs while a late workout finalize is still saving), quick successive logs (user logs food then immediately logs water), and wearable import (imports multiple workouts that each trigger a log save).
+Fix
+Implement an optimistic locking scheme on DailyLog. Add a version field to DailyLog. On save, check that the version hasn't changed since the read. If it has, re-read and re-compute. Alternatively, implement a per-date mutex using a simple promise queue.
+
+U-6: getAllDailyLogs Full AsyncStorage Scan
+HIGH  |  Every call scans every key in AsyncStorage, then deserializes every daily log
+Root Cause
+getAllDailyLogs calls AsyncStorage.getAllKeys() to get every key in the app's storage, then filters for keys starting with 'dailyLog_', then calls multiGet on all matching keys, then JSON.parse each one. After a year of use, this is 365+ keys to filter and 365+ JSON.parse calls.
+getRecentDailyLogs(7) — which the Stats screen calls for the 7-day view — delegates to getAllDailyLogs() and then .slice() to get the last 7. This means every time the Stats screen mounts, it loads and parses every daily log ever created, then throws away all but 7.
+Impact
+On a user with 6 months of data (180+ daily logs with food entries, workouts, and behavioral settlements), this takes 200-500ms on an iPhone 12 and causes a visible stutter when navigating to the Stats tab.
+Fix
+For getRecentDailyLogs: generate the last N date keys directly (today minus 0..N-1) and call getDailyLogsByDates. This is already O(N) and doesn't scan all keys.
+export async function getRecentDailyLogs(days: number) {
+  const dates: string[] = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    dates.push(todayKey(d));
+  }
+  const byDate = await getDailyLogsByDates(dates);
+  return dates.reverse().map(d => ({ date: d, log: byDate[d] || {} }));
+}
+U-7, U-8, U-9: Systemic Code Quality Issues
+MEDIUM  |  97 silent catches, 35 storage bypasses, 207 type escapes
+U-7: 97 Silent Catch Blocks
+Across the codebase, 97 catch {} blocks swallow errors with no logging, no Sentry reporting, and no fallback indication. 38 of these are in critical paths: storage operations, health data reads, Supabase queries, and behavioral settlement. In production, when these fail, the user sees stale data or a blank screen with no way to diagnose the issue. At minimum, all catch blocks in production code paths should call captureException.
+U-8: 35 Files Bypass Storage Abstraction
+storageUtils.ts provides safeParseJson, getDailyLog, saveDailyLog, getUserProfile, and emitDailyLogChanged. 35 files import AsyncStorage directly and bypass these. This means: no safeParseJson protection (raw JSON.parse that throws on corrupt data), no daily log change events (UI won't update), no email-scoped profile keys (multi-account support broken), and no normalized storage key management. Key offenders: healthService.ts, friendsService.ts, monetizationService.ts, challengeService.ts, runReviewService.ts.
+U-9: 207 'as any' Type Casts
+207 instances of 'as any' across 97 files. The most dangerous are in behavioralCore.ts (casting DailyLog.behavioral to Record<string, unknown>), supabaseClient.ts (casting the disabled proxy), and progressEngine.ts (casting parsed storage). Each cast is a location where TypeScript cannot verify data integrity, and corrupt data flows through unchecked.
+U-10: getRecentDailyLogs Loads Everything for 7-Day View
+MEDIUM  |  Stats screen 7-day view triggers full historical scan
+Root Cause
+Already described in U-6. getRecentDailyLogs(days) calls getAllDailyLogs() which scans all keys, then slices. This is called by the Stats screen on every mount and by the Home screen's winning day evaluation. The fix in U-6 eliminates this issue entirely.
+U-11: Supabase Auth Token in Unencrypted AsyncStorage
+MEDIUM  |  Auth session stored in AsyncStorage (app sandbox, not hardware-encrypted)
+Root Cause
+supabaseClient.ts configures Supabase auth storage to use AsyncStorage as primary, with SecureStore as a best-effort mirror only for values under 1900 characters. The Supabase session JWT is typically 800-1500 characters, so it IS mirrored. But the primary storage is AsyncStorage, which on iOS is backed by an unencrypted plist file in the app sandbox.
+If the device is jailbroken or if an iTunes backup is extracted, the session token is readable. SecureStore uses the iOS Keychain which survives even jailbreak in most cases. The storage should be flipped: SecureStore as primary for auth tokens, AsyncStorage as fallback only for oversized values.
+U-12: Duplicate Utility Functions
+LOW  |  optimizationUtils.ts re-implements functions already in storageUtils and other files
+Root Cause
+optimizationUtils.ts (430 lines) contains: safeJsonParse (duplicate of storageUtils.safeParseJson), batchAsyncStorageGet (duplicate of storageUtils.getDailyLogsByDates pattern), debounce/throttle (commonly available from lodash or custom hooks), and validateWorkoutData/validateFoodData/validateWeightData (validation logic that should live in the respective service files). This file appears to have been created independently from the established patterns.
+
+Complete File Changes Summary
+Priority 1: Fix Data Integrity (U-1, U-2)
+	•	Remove progressEngine.ts or redirect it to the real progression system
+	•	Migrate FoodLogger, WorkoutLogger, WeightLogger to use daily log + winningSystem + behavioralCore
+	•	Delete zenith:progressEngine:v1 storage key migration
+	•	Verify rank display uses single source of truth across all screens
+Priority 2: Fix Security (U-3, U-4, U-11)
+	•	authSecurity.ts: Replace === with constant-time comparison for hash verification
+	•	accountDeletion.ts: Add Supabase auth token SecureStore wipe + signOut call
+	•	supabaseClient.ts: Flip auth storage to SecureStore-primary, AsyncStorage-fallback
+Priority 3: Fix Reliability (U-5, U-6, U-10)
+	•	behavioralCore.ts: Add optimistic locking or per-date mutex for settleBehaviorDay
+	•	storageUtils.ts: Rewrite getRecentDailyLogs to generate date keys directly (no full scan)
+	•	storageUtils.ts: Add date-range variant of getAllDailyLogs for bounded queries
+Priority 4: Code Health (U-7, U-8, U-9, U-12)
+	•	Add captureException to all 97 silent catch blocks in production code paths
+	•	Audit 35 direct AsyncStorage imports: migrate to storageUtils abstractions
+	•	Audit 207 'as any' casts: add proper types or runtime validation
+	•	Consolidate optimizationUtils into existing utility modules
+Testing Checklist
+	•	Log food via FoodLogger: verify Winning Day toast fires when the log should complete a winning day.
+	•	Compare XP total on Profile screen vs progressEngine storage: verify they are identical (currently they will differ).
+	•	Run 10,000 password verification attempts with timing measurement: verify no correlation between attempt timing and correct prefix length.
+	•	Delete account (connected mode), then inspect SecureStore: verify no Supabase auth tokens remain.
+	•	Log food then immediately log water (within 500ms): verify both entries persist in daily log (no race overwrite).
+	•	Create a user with 365 daily logs. Navigate to Stats tab: measure mount time is under 100ms (currently 200-500ms).
+	•	Verify Profile screen rank matches Home screen rank matches Stats screen rank (single source of truth).
+	•	Search Sentry after 24h of production use: verify no silent failures that were previously swallowed by catch {}.

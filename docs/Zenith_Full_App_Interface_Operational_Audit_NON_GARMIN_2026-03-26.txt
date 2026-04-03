@@ -1,0 +1,150 @@
+Zenith Full App + Interface Operational Audit (Non-Garmin)
+Generated: 2026-03-26 (America/New_York)
+Scope: Entire app/interface pathways (buttons, tiles, routes, runtime services, release gates). Garmin findings excluded per request.
+
+What was verified
+- Route/path static verification: PASS (`npm run -s verify:routes`, `node scripts/report-incomplete-routes.js`)
+- Type safety: PASS (`npm run -s typecheck`)
+- Lint/release checks: FAIL (`npm run -s lint`, `npm run -s verify:ship-lock`)
+- Watch packaging check (non-Garmin): FAIL (`npm run -s verify:watch-plist`, `npm run -s verify:p0-all`)
+- Supabase runtime check: FAIL (`npm run -s verify:supabase-runtime`)
+- Phase readiness gates: FAIL (`npm run -s phase31:hard-gates`, `npm run -s phase32:ci-gate`)
+- Food production gate: FAIL (`npm run -s verify:food-audit-gates`)
+
+Executive verdict
+Route/button destination wiring is broadly present, but the app is NOT at full operational functionality end-to-end due to runtime/backend gaps, release blockers, and several explicitly partial pathways.
+
+Findings (severity ordered)
+
+1) CRITICAL — Hard-coded `local_user` identity in production pathways
+Impact
+- Social, clubs, safety, and run-review challenge/share attribution can be tied to a static local user instead of authenticated identity.
+Evidence
+- app/account/social-privacy.tsx:17
+- app/account/safety.tsx:7
+- app/clubs/index.tsx:17
+- app/clubs/[clubId].tsx:43
+- app/run-review.tsx:553
+- app/run-review.tsx:560
+- app/run-review.tsx:613
+- app/_layout.tsx:25
+Completion requirement
+- Replace static `local_user` usage with authenticated user id plumbing across all affected pathways.
+
+2) CRITICAL — Clubs and messaging persistence is local-storage based (not server-authoritative)
+Impact
+- Cross-device consistency, account-scoped continuity, moderation durability, and reliable multi-user behavior are incomplete.
+Evidence
+- utils/clubsService.ts:1
+- utils/clubsService.ts:93
+- utils/messageService.ts:1
+- utils/messageService.ts:93
+Completion requirement
+- Migrate club/message core state to authenticated Supabase-backed server write/read flows with reconciliation.
+
+3) CRITICAL — Privacy edge functions are missing in deployed runtime
+Impact
+- Privacy consent, data explanation, public-share guards, and retention enforcement are not operational in current runtime deployment.
+Evidence
+- Runtime probe statuses:
+  - privacy-consent -> 404
+  - privacy-data-explanation -> 404
+  - privacy-public-shares -> 404
+  - privacy-retention-enforce -> 404
+- Local client contracts depend on these:
+  - utils/privacyService.ts:98
+  - utils/privacyService.ts:119
+  - utils/privacyService.ts:136
+  - utils/privacyService.ts:142
+Completion requirement
+- Deploy missing privacy functions and validate auth + policy behavior in production runtime.
+
+4) CRITICAL — Food system production gate reports 11 high-critical blockers
+Impact
+- Food logging, offline sync, portability/import, admin operations, release hardening remain incomplete at production standard.
+Evidence
+- `npm run -s verify:food-audit-gates` fails with `high-critical blockers: 11`
+- docs/qa/food_audit_gate_report.md:18
+- docs/qa/food_audit_gate_report.md:29
+Completion requirement
+- Close all high-critical food blockers and re-run gate to green.
+
+5) HIGH — AppleDouble (`._*`) artifact contamination blocks quality/release gates
+Impact
+- Lint and ship-lock fail before meaningful code-quality validation; legal-site verification also fails from sidecar artifacts.
+Evidence
+- `npm run -s lint` -> 185 parse errors on `._*` files
+- `npm run -s verify:ship-lock` fails at lint stage for same reason
+- `find app components src utils supabase scripts -name '._*' -type f | wc -l` -> 531
+- `npm run -s verify:legal-site` flags `._index.html` pages repeatedly
+Completion requirement
+- Remove tracked `._*` artifacts, add guardrails to prevent reintroduction, re-run all gates.
+
+6) HIGH — Apple Watch icon asset set is missing required files (non-Garmin release blocker)
+Impact
+- Watch packaging/store readiness fails; P0 all-check fails.
+Evidence
+- `npm run -s verify:watch-plist` fails: Missing Watch App icon file `AppIcon-1024.png`
+- `find ios/ZenithWatch Watch App/Assets.xcassets/AppIcon.appiconset -name '*.png' | wc -l` -> 0
+- scripts/verify-watch-plist.js:87
+- scripts/verify-watch-plist.js:102
+Completion requirement
+- Add required watch icon PNG assets matching `Contents.json` + verifier requirements.
+
+7) HIGH — Phase 31 and Phase 32 operational hard gates fail
+Impact
+- Release readiness for parity, privacy/retention, export/import, canary/rollback, and provider freshness is incomplete.
+Evidence
+- `npm run -s phase31:hard-gates` -> 9/9 gates failing
+- docs/qa/phase31/hard_gates.md:10
+- docs/qa/phase31/hard_gates.md:18
+- `npm run -s phase32:ci-gate` -> parity_monitor/provider_freshness/food_audit_high_critical/phase31_hard_gates failed
+- docs/qa/phase32/ci_gate_summary.md:10
+Completion requirement
+- Resolve missing artifacts/env + failing scenarios until both gate suites pass.
+
+8) HIGH — Store purchase pathway is simulated/local, not production billing-complete
+Impact
+- Store purchase CTA flow does not execute a full production-grade IAP flow for pack purchase state.
+Evidence
+- utils/monetizationService.ts:604 comment: “Simulate IAP purchase (replace with RevenueCat/Expo IAP)”
+- utils/monetizationService.ts:606 writes purchase state to AsyncStorage
+- app/store.tsx:69 consumes this flow for purchase confirmation
+Completion requirement
+- Implement production billing pipeline end-to-end (entitlements, validation, restore consistency).
+
+9) HIGH — Routes pathway is explicitly partial (P0)
+Impact
+- Profile/Progress Routes destination exists, but feature is not fully built out yet (builder pipeline deferred).
+Evidence
+- app/account/progress/routes.tsx:117 (“P0... Route builder ships next.”)
+- app/account/progress/routes/[routeId].tsx:128 (“P0... offline viewing uses a stored snapshot image.”)
+Completion requirement
+- Ship full route-builder and finalized route workflow beyond P0 snapshot/save-only behavior.
+
+10) MEDIUM — Messaging links are explicitly blocked under MVP restriction
+Impact
+- DM pathway does not support URL sharing as a fully operational messaging capability.
+Evidence
+- utils/messageService.ts:483 returns “Links are disabled in MVP messaging.”
+Completion requirement
+- Replace blanket link block with safe policy (validation/moderation/preview).
+
+11) MEDIUM — Supabase runtime verifier includes helper folder `_shared` as deployable function
+Impact
+- Runtime verification signal includes false failure noise and can obscure true deployment issues.
+Evidence
+- scripts/verify-supabase-runtime.js scans all function directories excluding only dot-prefixed names
+- Runtime probe returns `_shared` -> 404
+Completion requirement
+- Exclude helper folders (`_shared`) from deployable function checks.
+
+Buttons/tiles pathway conclusion
+- Static destination wiring for route pushes is mostly intact (no broken route targets detected by route verifiers).
+- The main incompleteness is not missing navigation destinations, but destination maturity and backend/runtime readiness for full operation.
+
+Overall status (non-Garmin)
+- Route destination wiring: PASS
+- Type safety: PASS
+- Full operational functionality: FAIL
+- Highest-priority blockers: Findings 1 through 9 above.

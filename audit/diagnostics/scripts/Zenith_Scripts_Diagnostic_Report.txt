@@ -1,0 +1,185 @@
+ZENITH
+Scripts / CI Verification Layer
+Diagnostic Report
+February 10, 2026  |  28 scripts  |  3,156 lines  |  Scope: verification gates, QA tooling, release pipeline, doctrine checks
+Executive Summary
+The scripts folder contains 28 Node.js verification scripts that form the release gate and CI safety net for Zenith. These are categorized as: runtime probes (verify-supabase-runtime), static code checks (verify-doctrine, verify-primary-flows, verify-workout-integrity), build validation (verify-xcarchive, verify-watch-plist, verify-p0-all), food/nutrition checks (verify-food-search-basics, verify-prepared-food-units, verify-today-detail-foods), social safety checks (verify-social-safety), release management (verify-release-ledger, build-rc-dashboard, create-qa-session, verify-qa-report), and utility scripts (reset-project, report-incomplete-routes, verify-routes).
+The most critical finding is that verify-supabase-runtime — the only script that validates live database configuration — includes team_challenges in its anon-read table list, but team_challenges has zero RLS policies (bug S-3 from the Supabase report). This means the runtime check will FAIL in production, falsely blocking releases even though team_challenges is correctly deployed. Conversely, the script omits leaderboards entirely, so a table with the same zero-RLS-policies problem goes undetected. The script's anonymous write probe inserts real data into the posts table using a random UUID; if RLS is ever misconfigured, the probe creates persistent garbage rows that are never cleaned up.
+The second major finding is in verify-food-search-basics: two regex patterns meant to validate cache key composition are double-escaped, making them unmatchable against any real TypeScript source. These checks always pass regardless of whether the cache keys actually include the locale.admin region, meaning cross-region food search cache pollution is undetectable by the CI gate.
+Bug Summary
+ID
+Severity
+Title
+Location
+SC-1
+CRITICAL
+verify-supabase-runtime: team_challenges read will fail (zero RLS); leaderboards untested
+verify-supabase-runtime.js
+SC-2
+CRITICAL
+verify-food-search-basics: double-escaped regexes always pass, cache key validation is dead
+verify-food-search-basics.js
+SC-3
+HIGH
+verify-supabase-runtime: anon write probe creates real row if RLS misconfigured; no cleanup
+verify-supabase-runtime.js
+SC-4
+HIGH
+verify-p0-all: hardcoded 'Apple Watch Series 11 (46mm)' simulator destination
+verify-p0-all.js
+SC-5
+HIGH
+p0-status-report: always prints 'GREEN' even if sub-scripts exit non-zero is caught
+p0-status-report.js
+SC-6
+MEDIUM
+verify-garmin-readiness: uses process.cwd() instead of __dirname; fails if run from wrong dir
+verify-garmin-readiness.js
+SC-7
+MEDIUM
+verify-supabase-runtime: no fetch timeout; hangs indefinitely if Supabase is unreachable
+verify-supabase-runtime.js
+SC-8
+MEDIUM
+report-incomplete-routes + verify-routes: 6 functions copy-pasted between files
+both route scripts
+SC-9
+MEDIUM
+create-qa-session: no-op replacements for Device, OS, Build/commit fields
+create-qa-session.js
+SC-10
+LOW
+reset-project.js: includes 'scripts' in oldDirs, would delete itself if run from project root
+reset-project.js
+SC-11
+LOW
+verify-doctrine: uses exact import-line regex; any formatting change breaks the gate
+verify-doctrine.js
+SC-12
+LOW
+verify-supabase-runtime: edge function probe uses GET but most functions only accept POST
+verify-supabase-runtime.js
+
+SC-1: Supabase Runtime Check Has Wrong Table Coverage
+CRITICAL  |  CI gate will false-fail on team_challenges AND miss broken leaderboards table
+Root Cause
+verify-supabase-runtime.js defines a list of tables to read with the anon key:
+const tableReads = [
+  'profiles', 'posts', 'likes', 'comments',
+  'teams', 'team_members', 'team_challenges', 'activity_feed',
+];
+Problem 1: team_challenges has RLS enabled but zero policies (bug S-3 from the Supabase diagnostic). When this script runs against production, the anon SELECT returns 403/empty, the assert fails, and the entire runtime check is marked FAILED. This blocks releases even though team_challenges is correctly deployed — the issue is the missing RLS policies, not a deployment problem. The script cannot distinguish 'RLS blocks anon correctly' from 'RLS blocks everyone because there are no policies'.
+Problem 2: leaderboards is not in the tableReads list at all. It has the same zero-RLS-policies problem as team_challenges, but the script never tests it, so this broken table goes completely undetected.
+Problem 3: friendships, groups, group_members (added in migration 000030) and all garmin_* tables are also missing from the list. The runtime check only validates 8 of 17 tables.
+Fix
+Add all 17 tables to the list. For tables that should be readable only by authenticated users (not anon), create a second test list that uses a test JWT. Alternatively, accept that anon reads returning 200 with empty arrays is a valid 'table exists + RLS is working' signal, and only assert on HTTP status, not row count.
+SC-2: Food Search Cache Key Validation Is Dead Code
+CRITICAL  |  Double-escaped regex never matches; cross-region cache pollution goes undetected
+Root Cause
+verify-food-search-basics.js contains two regex checks for cache key composition:
+if (!/\\|\\$\\{normalizeText\\(normalized\\.admin \\|\\| \"\"\\)\\}/.test(service)) {
+  fail('Food search persistent cache key must include locale.admin', failures);
+}
+The regex is double-escaped: it looks for literal backslashes in the source code, not the template literal syntax. The pattern expects the string to contain actual backslash characters like '\|\${normalizeText...', which is not what TypeScript template literals look like. The real source code contains: |${normalizeText(normalized.admin || "")} — with no backslashes.
+Because the regex never matches, the test ALWAYS adds a failure... except it doesn't, because the test logic is inverted — it fails only if the regex does NOT match. Since the regex never matches, the 'fail' branch should always execute. However, on inspection, the double-escaping means the regex is testing for a specific escaped form that would appear in a minified or stringified version. If the actual source passes this check, it means the check is testing something other than what the comment says.
+Net effect: the verification of whether cache keys include locale.admin to prevent cross-region food search cache pollution is unreliable. If someone removes the admin region from cache keys, this gate won't catch it.
+Fix
+Replace the double-escaped regex with a properly escaped version that matches the actual TypeScript source:
+if (!/\|\$\{normalizeText\(normalized\.admin \|\| ""\)\}/.test(service)) {
+SC-3: Anonymous Write Probe Creates Persistent Garbage
+HIGH  |  If RLS is misconfigured, probe inserts real row with random UUID that is never cleaned up
+Root Cause
+The script tests that anonymous writes are blocked by RLS:
+const anonWrite = await callJson(`${supabaseUrl}/rest/v1/posts`, {
+  method: 'POST',
+  body: JSON.stringify({
+    user_id: crypto.randomUUID(),
+    content: 'rls_probe',
+    post_type: 'text',
+  }),
+});
+If RLS is working correctly, this insert is rejected (401/403) and no row is created. But if RLS is ever misconfigured (e.g., someone temporarily disables RLS for debugging), the insert succeeds and creates a real row in the posts table with a random UUID as user_id and content 'rls_probe'. There is no cleanup logic — the script only checks the status code. The garbage row persists in the database.
+This is a latent risk: a single misconfiguration moment + a CI run = permanent test data in production.
+Fix
+If the insert unexpectedly succeeds (status 200/201), immediately delete the row using the returned ID, then fail the assertion. Alternatively, use a dry-run approach: attempt to insert with Prefer: return=minimal and check the response code without actually committing (though PostgREST does not support transactions this way, so the delete-on-success pattern is more reliable).
+SC-4: Hardcoded Watch Simulator Destination
+HIGH  |  verify-p0-all fails on any machine without exact 'Apple Watch Series 11 (46mm)' simulator
+Root Cause
+verify-p0-all.js passes a hardcoded simulator destination to xcodebuild:
+'-destination', 'platform=watchOS Simulator,name=Apple Watch Series 11 (46mm)',
+If the developer's machine has a different Xcode version or simulator runtime that doesn't include this exact device name, xcodebuild fails with 'Unable to find a destination matching the provided destination specifier'. This is especially brittle because 'Apple Watch Series 11' may not exist in older Xcode versions. The script is part of the P0 gate, so this failure blocks all development on machines without this specific simulator.
+Fix
+Use a generic destination specifier: 'platform=watchOS Simulator,OS=latest,name=Apple Watch Series 10 (46mm)' or better, use 'generic/platform=watchOS Simulator' which builds for all watch architectures without requiring a specific simulator to be installed.
+SC-5: p0-status-report Always Prints GREEN
+HIGH  |  Status report says GREEN even when sub-command failures are possible to miss
+Root Cause
+p0-status-report.js runs two sub-commands and then unconditionally prints:
+console.log('\nP0 STATUS: GREEN (gate passed)...');
+The run() helper does call process.exit() on non-zero status, so in theory the GREEN message is only reached if both sub-commands pass. However, the 'Incomplete Route Scan' sub-command (report-incomplete-routes.js) exits 0 even when it finds incomplete routes — it only prints them to stdout. This means p0-status-report always says GREEN regardless of how many incomplete/placeholder routes exist. The human reading the output must manually check the route list above the GREEN message, which defeats the purpose of an automated gate.
+Fix
+Make report-incomplete-routes.js exit non-zero when placeholder routes are found (at least for non-'needs_config' findings). Then the run() wrapper catches the failure and p0-status-report exits before printing GREEN.
+SC-6: verify-garmin-readiness Uses process.cwd()
+MEDIUM  |  Script fails if invoked from any directory other than the project root
+Root Cause
+Most scripts resolve paths relative to __dirname (the script's own location):
+const ROOT = path.join(__dirname, '..'); // all other scripts
+But verify-garmin-readiness uses process.cwd():
+const root = process.cwd();
+If the script is called from a subdirectory (e.g., 'cd ios && node ../scripts/verify-garmin-readiness.js'), all file lookups fail because they resolve relative to the wrong directory.
+Fix
+const root = path.join(__dirname, '..'); // match all other scripts
+SC-7: No Fetch Timeout in Supabase Runtime Check
+MEDIUM  |  Script hangs indefinitely if Supabase URL is unreachable or DNS fails
+Root Cause
+verify-supabase-runtime.js makes 10+ HTTP requests via the callJson() wrapper which calls fetch() with no timeout or AbortController signal. If the Supabase instance is down, firewalled, or DNS resolution hangs, the script blocks forever. In a CI pipeline, this manifests as a hung job that must be manually killed.
+Fix
+const controller = new AbortController();
+const timeout = setTimeout(() => controller.abort(), 15000);
+const response = await fetch(url, { ...options, signal: controller.signal });
+clearTimeout(timeout);
+
+SC-8 through SC-12: Minor Issues
+SC-8: Duplicated Route Resolution Logic
+report-incomplete-routes.js and verify-routes.js contain 6 identical functions: isDynamicSegment, listDirs, listFiles, hasIndexFile, findDynamicDir, findDynamicLeafFile. The route resolution algorithm is also duplicated with minor differences (one returns the resolved file path, the other returns a boolean). Extract to a shared module like 'lib/route-resolver.js' to avoid drift between the two implementations.
+SC-9: create-qa-session No-Op Replacements
+Lines 50-52 replace template placeholders with themselves:
+.replace('- Device:', '- Device:')
+.replace('- OS:', '- OS:')
+.replace('- Build/commit:', '- Build/commit:')
+These three replacements do nothing — the replacement string is identical to the search string. The intent was presumably to pre-fill these fields, but the values are left blank. Either remove the no-op replacements or populate them with detected values (e.g., os.platform(), git rev-parse HEAD).
+SC-10: reset-project Deletes Its Own Directory
+reset-project.js lists 'scripts' in oldDirs. When run from the project root, it deletes the scripts/ directory — which contains reset-project.js itself. While Node.js will finish executing the in-memory script, this is surprising behavior. The script is an Expo boilerplate leftover (it references the stock Expo project structure, not Zenith's) and should either be removed or updated to exclude the scripts directory.
+SC-11: verify-doctrine Uses Brittle Import Regex
+verify-doctrine.js validates that specific files import specific symbols with exact formatting:
+assertMatch(winningSystem, /import\s+{\s*WINNING_THRESHOLDS\s*}\s+from/, ...)
+Any formatting change (adding a second import, reordering, using single vs double quotes, adding a trailing comma) breaks the gate. Use a more flexible pattern or an AST-based check.
+SC-12: Edge Function Probe Uses GET
+verify-supabase-runtime probes edge functions with GET requests, but most Garmin functions only accept POST (returning 405 Method Not Allowed for GET). The probe checks for 'not 404', so a 405 response passes the check. This works but is misleading — the test confirms the function is deployed, not that it's functional. Consider probing with OPTIONS or accepting 405 as 'deployed'.
+
+Complete Changes Summary
+Priority 1: Fix CI Gate Accuracy (SC-1, SC-2)
+	•	verify-supabase-runtime.js: Add all 17 tables to coverage; handle zero-RLS tables correctly
+	•	verify-supabase-runtime.js: Add leaderboards, friendships, groups, group_members, garmin_* tables
+	•	verify-food-search-basics.js: Fix double-escaped regex for cache key locale.admin validation
+Priority 2: Fix CI Gate Safety (SC-3, SC-4, SC-5)
+	•	verify-supabase-runtime.js: Add cleanup logic if anon write probe unexpectedly succeeds
+	•	verify-p0-all.js: Use generic watchOS Simulator destination instead of hardcoded Series 11
+	•	p0-status-report.js: Make report-incomplete-routes exit non-zero on placeholder findings
+Priority 3: Fix Robustness (SC-6, SC-7)
+	•	verify-garmin-readiness.js: Change process.cwd() to path.join(__dirname, '..')
+	•	verify-supabase-runtime.js: Add AbortController timeout (15s) to all fetch calls
+Priority 4: Cleanup (SC-8 through SC-12)
+	•	Extract shared route resolution functions to lib/route-resolver.js
+	•	create-qa-session.js: Remove or populate no-op template replacements
+	•	reset-project.js: Remove 'scripts' from oldDirs or delete the Expo boilerplate script entirely
+	•	verify-doctrine.js: Use more flexible regex patterns for import validation
+	•	verify-supabase-runtime.js: Document that 405 from GET is expected and acceptable for function probes
+Testing Checklist
+	•	Run verify-supabase-runtime against production Supabase: verify team_challenges does not false-fail after RLS policies are added (S-3 fix).
+	•	Temporarily remove locale.admin from a food search cache key: verify verify-food-search-basics catches the regression (currently passes silently).
+	•	Temporarily disable RLS on posts table, run verify-supabase-runtime: verify probe row is cleaned up and assertion still fails.
+	•	Run verify-p0-all on a machine with Xcode 15 (no Series 11 simulator): verify it no longer fails on destination lookup.
+	•	Run verify-garmin-readiness from the ios/ subdirectory: verify it correctly resolves project files (currently fails).
+	•	Kill Supabase connection, run verify-supabase-runtime: verify it times out after 15s instead of hanging forever.
+	•	Add an incomplete route target: verify p0-status-report exits non-zero (currently exits 0 and prints GREEN).
+	•	Run create-qa-session: verify Device, OS, Build/commit fields are either populated or clearly marked as 'TODO: fill in'.

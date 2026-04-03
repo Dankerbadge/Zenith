@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-03-27T02:48:57.536Z",
+  "sources": {
+    "parityPresent": true,
+    "providerPresent": true,
+    "anomalyPresent": true,
+    "remediationPresent": true,
+    "ciGatePresent": true
+  },
+  "status": {
+    "parityOk": true,
+    "providerOk": true,
+    "remediationOk": true,
+    "ciGateOk": true
+  },
+  "totals": {
+    "parityMetrics": 5,
+    "providerMetrics": 3,
+    "parityFailing": 0,
+    "providerFailing": 0,
+    "anomalyScenarios": 4,
+    "anomalySev1": 4,
+    "anomalySev2": 0,
+    "remediationActions": 4,
+    "remediationApplied": 4
+  },
+  "ok": true
+}

@@ -1,0 +1,211 @@
+{
+  "generatedAt": "2026-03-26T22:31:26.537Z",
+  "scope": "Phases 19-32",
+  "enforceMode": false,
+  "releaseReady": false,
+  "gateCount": 5,
+  "failedGateCount": 3,
+  "gates": [
+    {
+      "key": "food_audit_high_critical_clear",
+      "title": "Food Audit High-Critical Clear",
+      "pass": false,
+      "notes": "high_blockers=11",
+      "owner": "Release Eng"
+    },
+    {
+      "key": "phase31_hard_gates",
+      "title": "Phase 31 Hard Gates",
+      "pass": false,
+      "notes": "missing_phase31_hard_gates",
+      "owner": "SRE"
+    },
+    {
+      "key": "phase32_ci_gate",
+      "title": "Phase 32 CI Gate",
+      "pass": false,
+      "notes": "failed=4",
+      "owner": "QA / DevOps"
+    },
+    {
+      "key": "ship_lock_contains_food_audit_gate",
+      "title": "Ship Lock Includes Food Audit Gate",
+      "pass": true,
+      "notes": "present",
+      "owner": "Release Eng"
+    },
+    {
+      "key": "phase32_scripts_wired",
+      "title": "Phase 32 Script Wiring",
+      "pass": true,
+      "notes": "phase32 npm scripts present",
+      "owner": "Release Eng"
+    }
+  ],
+  "auditSummary": {
+    "food_logging": "partial",
+    "search_engine": "partial",
+    "offline_sync": "missing",
+    "privacy_consent": "partial",
+    "export_import": "partial",
+    "admin_operations": "partial",
+    "release_ops_hardening": "partial",
+    "assets_ui": "partial"
+  },
+  "ownerSummary": [
+    {
+      "owner": "Backend Eng",
+      "count": 3
+    },
+    {
+      "owner": "Data Eng",
+      "count": 2
+    },
+    {
+      "owner": "Mobile Infra",
+      "count": 2
+    },
+    {
+      "owner": "Release Eng",
+      "count": 2
+    },
+    {
+      "owner": "SRE",
+      "count": 2
+    },
+    {
+      "owner": "Backend Ops",
+      "count": 1
+    },
+    {
+      "owner": "Product + Mobile",
+      "count": 1
+    },
+    {
+      "owner": "QA / Sync Eng",
+      "count": 1
+    },
+    {
+      "owner": "Search Backend",
+      "count": 1
+    }
+  ],
+  "blockers": [
+    {
+      "source": "food_audit_gate",
+      "key": "Immutable server v2 log write path",
+      "owner": "Backend Eng",
+      "notes": "food_logging:missing"
+    },
+    {
+      "source": "food_audit_gate",
+      "key": "Dual-read/dual-write parity in runtime",
+      "owner": "Backend Eng",
+      "notes": "food_logging:missing"
+    },
+    {
+      "source": "food_audit_gate",
+      "key": "Restaurant provider support",
+      "owner": "Search Backend",
+      "notes": "search_engine:missing"
+    },
+    {
+      "source": "food_audit_gate",
+      "key": "Offline pack (SQLite + manifest + attribution files)",
+      "owner": "Mobile Infra",
+      "notes": "offline_sync:missing"
+    },
+    {
+      "source": "food_audit_gate",
+      "key": "Sync protocol version negotiation",
+      "owner": "Backend Eng",
+      "notes": "offline_sync:missing"
+    },
+    {
+      "source": "food_audit_gate",
+      "key": "No-guilt notification language policy",
+      "owner": "Product + Mobile",
+      "notes": "privacy_consent:missing"
+    },
+    {
+      "source": "food_audit_gate",
+      "key": "Restore-grade import and portability jobs",
+      "owner": "Data Eng",
+      "notes": "export_import:missing"
+    },
+    {
+      "source": "food_audit_gate",
+      "key": "Admin RBAC + break-glass + queue model",
+      "owner": "Backend Ops",
+      "notes": "admin_operations:missing"
+    },
+    {
+      "source": "food_audit_gate",
+      "key": "Runtime compatibility endpoint and release schema",
+      "owner": "Release Eng",
+      "notes": "release_ops_hardening:missing"
+    },
+    {
+      "source": "food_audit_gate",
+      "key": "SLO/anomaly automation realism",
+      "owner": "SRE",
+      "notes": "release_ops_hardening:partial"
+    },
+    {
+      "source": "food_audit_gate",
+      "key": "Food offline pack assets",
+      "owner": "Mobile Infra",
+      "notes": "assets_ui:missing"
+    },
+    {
+      "source": "phase32_ci_gate",
+      "key": "parity_monitor",
+      "owner": "See gate owner mapping",
+      "notes": "failing=5"
+    },
+    {
+      "source": "phase32_ci_gate",
+      "key": "provider_freshness",
+      "owner": "See gate owner mapping",
+      "notes": "failing=3"
+    },
+    {
+      "source": "phase32_ci_gate",
+      "key": "food_audit_high_critical",
+      "owner": "See gate owner mapping",
+      "notes": "high_blockers=11"
+    },
+    {
+      "source": "phase32_ci_gate",
+      "key": "phase31_hard_gates",
+      "owner": "See gate owner mapping",
+      "notes": "missing_phase31_hard_gates"
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact": "docs/qa/FOOD_SYSTEM_PROD_AUDIT.json",
+      "present": true
+    },
+    {
+      "artifact": "docs/qa/food_audit_gate_report.json",
+      "present": true
+    },
+    {
+      "artifact": "docs/qa/phase31/hard_gates.json",
+      "present": false
+    },
+    {
+      "artifact": "docs/qa/phase32/ci_gate_summary.json",
+      "present": true
+    },
+    {
+      "artifact": "docs/qa/phase32/daily_ops_summary.json",
+      "present": true
+    },
+    {
+      "artifact": "docs/qa/phase32/weekly_reliability_trends.json",
+      "present": true
+    }
+  ]
+}

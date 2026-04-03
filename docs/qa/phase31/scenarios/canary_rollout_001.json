@@ -1,0 +1,21 @@
+{
+  "scenario_id": "S31-001",
+  "description": "1% canary rollout with auto-halt on dual-write mismatch",
+  "status": "pass",
+  "observed": {
+    "halt_triggered": true,
+    "dual_write_parity": 0.05,
+    "audit_events_created": true,
+    "halt_candidates": 2,
+    "rollback_candidates": 0
+  },
+  "expected_outcomes": {
+    "halt_triggered": true,
+    "dual_write_parity": "<=0.1%",
+    "audit_events_created": true
+  },
+  "hard_gate_passed": true,
+  "owner": "DevOps",
+  "notes": "halt_drill=true,alert_sim=true,anomaly_drill=true",
+  "executed_at": "2026-03-27T00:42:51.692Z"
+}

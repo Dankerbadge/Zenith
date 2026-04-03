@@ -1,0 +1,18 @@
+{
+  "scenario_id": "S31-002",
+  "description": "Rollback drill restores prior stable state and keeps offline log integrity",
+  "critical_paths": ["logging", "sync"],
+  "flags": ["FF_RELEASE_GATING_ENABLED", "FF_RELEASE_KILL_SWITCHES_ENABLED"],
+  "client_versions": ["latest", "v2.1.0"],
+  "offline_states": [false, true],
+  "expected_outcomes": {
+    "rollback_triggered": true,
+    "state_restored": true,
+    "offline_logs_intact": true
+  },
+  "report_paths": {
+    "json": "docs/qa/phase31/scenarios/rollback_drill_001.json",
+    "md": "docs/qa/phase31/scenarios/rollback_drill_001.md"
+  },
+  "owner": "Release Engineer"
+}

@@ -1,0 +1,187 @@
+{
+  "ok": true,
+  "createdAt": "2026-03-27T02:48:57.369Z",
+  "total": 10,
+  "failed": [],
+  "scenarios": [
+    {
+      "id": "S31-001",
+      "key": "canary",
+      "title": "Canary Rollout 1%-10%",
+      "report": "docs/qa/phase31/scenarios/canary_rollout_001.json",
+      "script": "scripts/phase31/scenarios/run-canary-rollout.js",
+      "exists": true,
+      "status": "pass",
+      "hard_gate_passed": true,
+      "observed": {
+        "halt_triggered": true,
+        "dual_write_parity": 0.05,
+        "audit_events_created": true,
+        "halt_candidates": 2,
+        "rollback_candidates": 0
+      },
+      "executed_at": "2026-03-27T00:42:51.692Z"
+    },
+    {
+      "id": "S31-002",
+      "key": "rollback",
+      "title": "Rollback Drill",
+      "report": "docs/qa/phase31/scenarios/rollback_drill_001.json",
+      "script": "scripts/phase31/scenarios/run-rollback-drill.js",
+      "exists": true,
+      "status": "pass",
+      "hard_gate_passed": true,
+      "observed": {
+        "rollback_triggered": true,
+        "state_restored": true,
+        "offline_logs_intact": true,
+        "before_count": 1,
+        "after_count": 1,
+        "audit_events_created": true
+      },
+      "executed_at": "2026-03-27T00:42:52.852Z"
+    },
+    {
+      "id": "S31-003",
+      "key": "sync_e2e",
+      "title": "Offline -> Online Sync E2E",
+      "report": "docs/qa/phase31/scenarios/sync_e2e_001.json",
+      "script": "scripts/phase31/scenarios/run-sync-e2e.js",
+      "exists": true,
+      "status": "pass",
+      "hard_gate_passed": true,
+      "observed": {
+        "logs_synced": true,
+        "dual_write_parity": 0,
+        "sync_check_notes": "calories=730",
+        "parity_check_notes": "rows=1,parity_ok=true"
+      },
+      "executed_at": "2026-03-27T02:48:56.959Z"
+    },
+    {
+      "id": "S31-004",
+      "key": "goal_e2e",
+      "title": "Goal-Aware Logging",
+      "report": "docs/qa/phase31/scenarios/goal_e2e_001.json",
+      "script": "scripts/phase31/scenarios/run-goal-e2e.js",
+      "exists": true,
+      "status": "pass",
+      "hard_gate_passed": true,
+      "observed": {
+        "goal_totals_updated": true,
+        "goal_reflection_in_discovery": true,
+        "goal_check_notes": "goal_snapshot_ok",
+        "discovery_check_notes": "usual_food_upsert_ok"
+      },
+      "executed_at": "2026-03-27T02:48:57.016Z"
+    },
+    {
+      "id": "S31-005",
+      "key": "discovery_e2e",
+      "title": "Discovery / Usual Foods",
+      "report": "docs/qa/phase31/scenarios/discovery_e2e_001.json",
+      "script": "scripts/phase31/scenarios/run-discovery-e2e.js",
+      "exists": true,
+      "status": "pass",
+      "hard_gate_passed": true,
+      "observed": {
+        "top_foods_correct": true,
+        "runtime_contract_ok": true,
+        "dual_read_parity": 0,
+        "discovery_check_notes": "usual_food_upsert_ok",
+        "runtime_check_notes": "runtime_contract_ok"
+      },
+      "executed_at": "2026-03-27T02:48:57.073Z"
+    },
+    {
+      "id": "S31-006",
+      "key": "export_import",
+      "title": "Export / Import",
+      "report": "docs/qa/phase31/scenarios/export_import_001.json",
+      "script": "scripts/phase31/scenarios/run-export-import.js",
+      "exists": true,
+      "status": "pass",
+      "hard_gate_passed": true,
+      "observed": {
+        "export_snapshot_complete": true,
+        "import_restore_success": true,
+        "audit_events_created": true,
+        "export_import_notes": "import_probe=portability-import:200"
+      },
+      "executed_at": "2026-03-27T00:43:23.799Z"
+    },
+    {
+      "id": "S31-007",
+      "key": "delete_account",
+      "title": "Account Deletion",
+      "report": "docs/qa/phase31/scenarios/delete_account_001.json",
+      "script": "scripts/phase31/scenarios/run-delete-account.js",
+      "exists": true,
+      "status": "pass",
+      "hard_gate_passed": true,
+      "observed": {
+        "delete_call_ok": true,
+        "privacy_tables_purged": true,
+        "offline_cache_cleared": true,
+        "sign_in_blocked": true,
+        "audit_events_created": true
+      },
+      "executed_at": "2026-03-27T00:43:27.985Z"
+    },
+    {
+      "id": "S31-008",
+      "key": "consent_e2e",
+      "title": "Privacy / Consent Enforcement",
+      "report": "docs/qa/phase31/scenarios/consent_e2e_001.json",
+      "script": "scripts/phase31/scenarios/run-consent-e2e.js",
+      "exists": true,
+      "status": "pass",
+      "hard_gate_passed": true,
+      "observed": {
+        "consent_gated_actions": true,
+        "retention_enforced": true,
+        "notifications_enabled": false,
+        "consent_check_notes": "share_guard_enforced",
+        "retention_check_notes": "old_row_deleted=true"
+      },
+      "executed_at": "2026-03-27T00:43:39.325Z"
+    },
+    {
+      "id": "S31-009",
+      "key": "admin_replay",
+      "title": "Admin Replay / Repair",
+      "report": "docs/qa/phase31/scenarios/admin_replay_001.json",
+      "script": "scripts/phase31/scenarios/run-admin-replay.js",
+      "exists": true,
+      "status": "pass",
+      "hard_gate_passed": true,
+      "observed": {
+        "replay_idempotent": true,
+        "remediation_ok": true,
+        "remediation_results": 3,
+        "audit_events_created": true,
+        "replay_check_notes": "totals=0/0"
+      },
+      "executed_at": "2026-03-27T02:48:57.241Z"
+    },
+    {
+      "id": "S31-010",
+      "key": "anomaly",
+      "title": "Anomaly Injection",
+      "report": "docs/qa/phase31/scenarios/anomaly_drill_001.json",
+      "script": "scripts/phase31/scenarios/run-anomaly-drill.js",
+      "exists": true,
+      "status": "pass",
+      "hard_gate_passed": true,
+      "observed": {
+        "auto_halt_triggered": true,
+        "remediation_triggered": true,
+        "audit_events_created": true,
+        "halt_candidates": 2,
+        "rollback_candidates": 0,
+        "remediated_count": 0
+      },
+      "executed_at": "2026-03-27T02:48:57.357Z"
+    }
+  ]
+}

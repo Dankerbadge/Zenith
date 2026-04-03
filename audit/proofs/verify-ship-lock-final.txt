@@ -1,0 +1,76 @@
+env: load .env.local
+env: export EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_PASSWORD_RESET_REDIRECT_URL EXPO_PUBLIC_DEBUG_KEYBOARD_JITTER
+Watch Info.plist verification passed.
+- WKApplication present
+- WKWatchKitApp absent
+- Health purpose strings present
+- Watch HealthKit entitlement present
+- Watch App icons present + CFBundleIconName set
+Run lifecycle verification passed.
+- Required transitions validated
+- Invalid transitions blocked
+- Terminal states locked
+Live tracking calibration verification passed.
+- Config keys present
+- gpsService wired to config
+- No banned hard-coded calibration constants detected
+- Parameter documentation present
+Food search basics verification passed.
+- Catalog items: 49
+- Required canonical pins present
+- Modal surfaces common foods
+Today Detail foods verification passed.
+- Grouping + ordering unit tests passed
+- Snapshot-style regressions passed
+Health auto-sync verification passed.
+- Foreground + open triggers present
+- Auto sync gated on authorization + staleness
+- Permission UX uses Settings CTA (no dead-end modal copy)
+Prepared food unit defaults verification passed.
+- Pizza defaults inject slice units
+- Slice conversion produces sane canonical grams
+Compliance config check passed.
+- Privacy: https://zenithfit.app/privacy
+- Terms: https://zenithfit.app/terms
+- Support: support@zenithfit.app
+Doctrine check passed.
+- Social is enabled (Supabase-backed).
+- Community does not ship seeded/mock social data.
+- Notification defaults are opt-in.
+- Winning day is active-day based to protect streak continuity.
+Social safety check passed.
+- Friend requests/day: 40
+- Friend repeat cooldown: 12h
+- Friend decline cooldown: 3d
+- Messages/min: 18
+- Invites/day (DM): 20
+- Invite repeat cooldown: 24h
+- Club join requests/day: 20
+- Club invites/day: 40
+- Invite token failures/hour: 8
+- Reports/day: 60
+Store pack check passed.
+- Bundle ID: app.zenithfitness.mobile
+- Privacy URL found: https://zenithfit.app/privacy
+- Terms URL found: https://zenithfit.app/terms
+- Support email found: support@zenithfit.app
+Release ledger check passed.
+- Phase lines: 36
+Website verification passed.
+- 24 HTML files checked
+- Required routes and assets present
+- No inline margin-top styles detected
+- Internal href targets resolve
+Route verification passed.
+Checked 98 file(s) in app/.
+Primary flow marker check passed.
+Scanned 34 file(s).
+Run time policy verification passed.
+- Late logs still save, but XP is correctly time-gated.
+- Winning Day counts late/no-xp workouts to protect streak continuity.
+- Behavioral authority can still treat late/no-xp as non-authoritative for anti-exploit controls.
+- User-facing policy transparency is present in review + summary.
+Workout integrity verification passed.
+- Metric versions are set on workout-producing flows.
+- Metrics lock is finalized and immutable by default.
+- Migration backfills legacy workout entries.

@@ -1,0 +1,20 @@
+{
+  "scenario_id": "S31-006",
+  "description": "Export/import flow preserves snapshot correctness and import reachability",
+  "status": "pass",
+  "observed": {
+    "export_snapshot_complete": true,
+    "import_restore_success": true,
+    "audit_events_created": true,
+    "export_import_notes": "import_probe=portability-import:200"
+  },
+  "expected_outcomes": {
+    "export_snapshot_complete": true,
+    "import_restore_success": true,
+    "audit_events_created": true
+  },
+  "hard_gate_passed": true,
+  "owner": "Data Eng",
+  "notes": "e2e_run=true",
+  "executed_at": "2026-03-27T00:43:23.799Z"
+}

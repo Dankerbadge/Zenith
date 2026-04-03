@@ -1,0 +1,8 @@
+Supabase runtime preflight:
+- URL: https://erdllcmwzqqbevfdknbh.supabase.co
+- Anon key: eyJhbGciOi...vYks84
+Supabase runtime check passed.
+- Auth settings reachable
+- Tables readable with anon role: profiles, follows, posts, likes, comments, teams, team_members, team_challenges, leaderboards, activity_feed, groups, group_members, friendships, garmin_link_tokens, garmin_device_links, garmin_workouts, garmin_entitlements
+- Anonymous insert blocked by RLS
+- Edge functions reachable (not 404): delete-me, garmin-entitlement, garmin-link-confirm, garmin-link-token, garmin-workout-upsert

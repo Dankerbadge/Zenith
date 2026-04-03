@@ -1,0 +1,101 @@
+{
+  "ok": true,
+  "generatedAt": "2026-03-27T02:48:57.544Z",
+  "mode": "strict",
+  "gateCount": 5,
+  "failedCount": 0,
+  "dependencyChain": {
+    "phase31InvokedByPhase32": true,
+    "phase31RunOk": true,
+    "phase31ArtifactFreshForRun": true,
+    "phase31ArtifactCreatedAt": "2026-03-27T02:48:57.377Z"
+  },
+  "failed": [],
+  "gates": [
+    {
+      "gateKey": "parity_monitor",
+      "title": "Offline/Online + Dual Path Parity",
+      "pass": true,
+      "notes": "failing=0",
+      "owner": "QA / Sync Eng"
+    },
+    {
+      "gateKey": "provider_freshness",
+      "title": "Provider Freshness",
+      "pass": true,
+      "notes": "failing=0",
+      "owner": "Data Eng"
+    },
+    {
+      "gateKey": "food_audit_high_critical",
+      "title": "High-Critical Audit Gaps Cleared",
+      "pass": true,
+      "notes": "high_blockers=0",
+      "owner": "Release Eng"
+    },
+    {
+      "gateKey": "phase31_hard_gates",
+      "title": "Phase 31 Hard Gates",
+      "pass": true,
+      "notes": "failed=0,run_ok=true,fresh=true",
+      "owner": "SRE"
+    },
+    {
+      "gateKey": "automated_remediation",
+      "title": "Automated Remediation Playbook",
+      "pass": true,
+      "notes": "applied=4",
+      "owner": "Backend Eng"
+    }
+  ],
+  "execution": [
+    {
+      "script": "scripts/phase31-hard-gates.js",
+      "args": [],
+      "ok": true,
+      "status": 0,
+      "stderr": ""
+    },
+    {
+      "script": "scripts/phase32/phase32-monitor-parity.js",
+      "args": [
+        "--strict"
+      ],
+      "ok": true,
+      "status": 0,
+      "stderr": ""
+    },
+    {
+      "script": "scripts/phase32/phase32-monitor-provider.js",
+      "args": [
+        "--strict"
+      ],
+      "ok": true,
+      "status": 0,
+      "stderr": ""
+    },
+    {
+      "script": "scripts/phase32/phase32-anomaly-drill.js",
+      "args": [],
+      "ok": true,
+      "status": 0,
+      "stderr": ""
+    },
+    {
+      "script": "scripts/phase32/phase32-remediation.js",
+      "args": [
+        "--strict"
+      ],
+      "ok": true,
+      "status": 0,
+      "stderr": ""
+    },
+    {
+      "script": "scripts/phase32/phase32-report.js",
+      "args": [],
+      "ok": true,
+      "status": 0,
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+<strings>
+  <string id="brand_live">ZENITH</string>
+  <string id="hint_run_recording">SELECT to pause · BACK to end</string>
+  <string id="hint_run_paused">SELECT to resume · BACK to end</string>
+  <string id="hint_lift">SELECT set/undo · BACK to end</string>
+  <string id="hint_confirm_end">Press BACK again to end</string>
+  <string id="save_secondary">or BACK to discard</string>
+</strings>

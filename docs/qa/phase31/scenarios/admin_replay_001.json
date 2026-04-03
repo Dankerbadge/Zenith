@@ -1,0 +1,20 @@
+{
+  "scenario_id": "S31-009",
+  "description": "Admin replay and remediation remain idempotent and audited",
+  "status": "pass",
+  "observed": {
+    "replay_idempotent": true,
+    "remediation_ok": true,
+    "remediation_results": 3,
+    "audit_events_created": true,
+    "replay_check_notes": "totals=0/0"
+  },
+  "expected_outcomes": {
+    "replay_idempotent": true,
+    "audit_events_created": true
+  },
+  "hard_gate_passed": true,
+  "owner": "Ops",
+  "notes": "remediation_run=skipped_missing_env,e2e_run=skipped_missing_env",
+  "executed_at": "2026-03-27T02:48:57.241Z"
+}

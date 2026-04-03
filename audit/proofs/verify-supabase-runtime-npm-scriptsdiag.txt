@@ -1,0 +1,5 @@
+Supabase runtime preflight:
+- URL: https://erdllcmwzqqbevfdknbh.supabase.co
+- Anon key: eyJhbGciOi...vYks84
+Supabase runtime check failed: groups read probe failed (500)
+verify_supabase_runtime_npm_exit=1
