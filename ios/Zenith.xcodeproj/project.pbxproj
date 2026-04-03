@@ -23,10 +23,11 @@
 		7A11D0A12F355AAA00A0B0C1 /* LiftControlEventEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A11D0A02F355AAA00A0B0C1 /* LiftControlEventEmitter.swift */; };
 		7A11D0A32F355AAB00A0B0C1 /* LiftControlNativeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A11D0A22F355AAB00A0B0C1 /* LiftControlNativeBridge.swift */; };
 		7A11D0A52F355AAC00A0B0C1 /* LiftControlNativeBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 7A11D0A42F355AAC00A0B0C1 /* LiftControlNativeBridge.m */; };
-		7B11E0A22F50000100A0B0C1 /* BodyMap3DView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B11E0A12F50000100A0B0C1 /* BodyMap3DView.swift */; };
-		7B11E0A42F50000200A0B0C1 /* BodyMap3DViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B11E0A32F50000200A0B0C1 /* BodyMap3DViewManager.swift */; };
-		7B11E0A62F50000300A0B0C1 /* BodyMap3DViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B11E0A52F50000300A0B0C1 /* BodyMap3DViewManager.m */; };
-		9ABE1B43E01EFED6C2203891 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B74F36EF7082629BFE7599A8 /* ExpoModulesProvider.swift */; };
+			7B11E0A22F50000100A0B0C1 /* BodyMap3DView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B11E0A12F50000100A0B0C1 /* BodyMap3DView.swift */; };
+			7B11E0A42F50000200A0B0C1 /* BodyMap3DViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B11E0A32F50000200A0B0C1 /* BodyMap3DViewManager.swift */; };
+			7B11E0A62F50000300A0B0C1 /* BodyMap3DViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B11E0A52F50000300A0B0C1 /* BodyMap3DViewManager.m */; };
+			7B11E0A82F50000500A0B0C1 /* BodyMapModel.usdz in Resources */ = {isa = PBXBuildFile; fileRef = 7B11E0A72F50000400A0B0C1 /* BodyMapModel.usdz */; };
+			9ABE1B43E01EFED6C2203891 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B74F36EF7082629BFE7599A8 /* ExpoModulesProvider.swift */; };
 		9EBE7B3D111D94165E35A572 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 778DEFD3A18ED0AA5F61AE7D /* PrivacyInfo.xcprivacy */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		C3684E442F3552CA007302D3 /* ZenithWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = C3684E3A2F3552C8007302D3 /* ZenithWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -98,10 +99,11 @@
 		7A11D0A02F355AAA00A0B0C1 /* LiftControlEventEmitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LiftControlEventEmitter.swift; path = Zenith/LiftControlEventEmitter.swift; sourceTree = "<group>"; };
 		7A11D0A22F355AAB00A0B0C1 /* LiftControlNativeBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LiftControlNativeBridge.swift; path = Zenith/LiftControlNativeBridge.swift; sourceTree = "<group>"; };
 		7A11D0A42F355AAC00A0B0C1 /* LiftControlNativeBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = LiftControlNativeBridge.m; path = Zenith/LiftControlNativeBridge.m; sourceTree = "<group>"; };
-		7B11E0A12F50000100A0B0C1 /* BodyMap3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BodyMap3DView.swift; path = Zenith/BodyMap3DView.swift; sourceTree = "<group>"; };
-		7B11E0A32F50000200A0B0C1 /* BodyMap3DViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BodyMap3DViewManager.swift; path = Zenith/BodyMap3DViewManager.swift; sourceTree = "<group>"; };
-		7B11E0A52F50000300A0B0C1 /* BodyMap3DViewManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BodyMap3DViewManager.m; path = Zenith/BodyMap3DViewManager.m; sourceTree = "<group>"; };
-		9A8B8954A95B9EBA944AD975 /* Pods-Zenith.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zenith.debug.xcconfig"; path = "Target Support Files/Pods-Zenith/Pods-Zenith.debug.xcconfig"; sourceTree = "<group>"; };
+			7B11E0A12F50000100A0B0C1 /* BodyMap3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BodyMap3DView.swift; path = Zenith/BodyMap3DView.swift; sourceTree = "<group>"; };
+			7B11E0A32F50000200A0B0C1 /* BodyMap3DViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BodyMap3DViewManager.swift; path = Zenith/BodyMap3DViewManager.swift; sourceTree = "<group>"; };
+			7B11E0A52F50000300A0B0C1 /* BodyMap3DViewManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = BodyMap3DViewManager.m; path = Zenith/BodyMap3DViewManager.m; sourceTree = "<group>"; };
+			7B11E0A72F50000400A0B0C1 /* BodyMapModel.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; name = BodyMapModel.usdz; path = Zenith/BodyMapModel.usdz; sourceTree = "<group>"; };
+			9A8B8954A95B9EBA944AD975 /* Pods-Zenith.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Zenith.debug.xcconfig"; path = "Target Support Files/Pods-Zenith/Pods-Zenith.debug.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Zenith/SplashScreen.storyboard; sourceTree = "<group>"; };
 		B74F36EF7082629BFE7599A8 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Zenith/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
@@ -203,10 +205,11 @@
 				7A11D0A02F355AAA00A0B0C1 /* LiftControlEventEmitter.swift */,
 				7A11D0A22F355AAB00A0B0C1 /* LiftControlNativeBridge.swift */,
 				7A11D0A42F355AAC00A0B0C1 /* LiftControlNativeBridge.m */,
-				7B11E0A12F50000100A0B0C1 /* BodyMap3DView.swift */,
-				7B11E0A32F50000200A0B0C1 /* BodyMap3DViewManager.swift */,
-				7B11E0A52F50000300A0B0C1 /* BodyMap3DViewManager.m */,
-				F11748442D0722820044C1D9 /* Zenith-Bridging-Header.h */,
+					7B11E0A12F50000100A0B0C1 /* BodyMap3DView.swift */,
+					7B11E0A32F50000200A0B0C1 /* BodyMap3DViewManager.swift */,
+					7B11E0A52F50000300A0B0C1 /* BodyMap3DViewManager.m */,
+					7B11E0A72F50000400A0B0C1 /* BodyMapModel.usdz */,
+					F11748442D0722820044C1D9 /* Zenith-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
@@ -413,10 +416,11 @@
 			files = (
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
-				2D61CE48C98B4B409CC51B62 /* LaunchScreen.storyboard in Resources */,
-				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				9EBE7B3D111D94165E35A572 /* PrivacyInfo.xcprivacy in Resources */,
-			);
+					2D61CE48C98B4B409CC51B62 /* LaunchScreen.storyboard in Resources */,
+					3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
+					9EBE7B3D111D94165E35A572 /* PrivacyInfo.xcprivacy in Resources */,
+					7B11E0A82F50000500A0B0C1 /* BodyMapModel.usdz in Resources */,
+				);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		C3684E382F3552C8007302D3 /* Resources */ = {
