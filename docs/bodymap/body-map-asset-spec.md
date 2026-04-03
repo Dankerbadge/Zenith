@@ -75,6 +75,49 @@ Current renderer also accepts:
 - Region overlays: flat/clean surfaces intended for runtime tinting in SceneKit.
 - No baked neon gradients in texture maps; runtime coloring controls intensity.
 
+## V3 Silhouette Brief (Highest Priority)
+Target a stylized athletic mannequin, not photorealism. The goal is clean anatomy cues that still read well under flat FRONT/BACK camera views.
+
+### Proportion Targets
+1. Reduce shoulder/delt mass ~10-15%.
+2. Reduce upper-arm/forearm thickness ~15-20%.
+3. Shrink hands and make fingers/palm silhouette less mitten-like.
+4. Increase ribcage-to-waist taper so torso is not cylindrical.
+5. Clarify waist-to-pelvis transition; pelvis slightly wider than waist.
+6. Lengthen lower leg modestly and slim ankles.
+7. Make feet longer and lower profile (less blocky volume).
+8. Add clavicle/neck transition so neck does not emerge as a smooth stump.
+9. Add clearer knee and ankle landmarks.
+
+### Landmark Readability Rules
+1. FRONT and BACK views must show clear torso taper at a glance.
+2. Delts should not dominate body width.
+3. Hands/feet should not draw attention before torso regions.
+4. Torso should read as anatomy first, overlays second.
+
+## Overlay Shell Coverage Rules (V3)
+The body should remain visible underneath overlays. Overlays are thin plates, not a full-body suit.
+
+1. Leave elbows, knees, wrists, ankles, hands, and feet mostly base-body.
+2. Reduce torso overlay wraparound so dark base body remains visible between regions.
+3. Keep visible gutters between adjacent regions:
+   - chest vs delts
+   - abs vs obliques
+   - lats vs upper back
+   - quads vs adductors
+   - hamstrings vs glutes
+4. Keep shoulder triplet (`DELTS_FRONT_*`, `DELTS_SIDE_*`, `DELTS_REAR_*`) thin and clearly separated.
+5. Prevent pelvis-region crowding (`GLUTES_*`, `HIP_FLEXORS_*`, `ADDUCTORS_*` should not visually collide).
+6. Keep quad/hamstring shells from wrapping too far around the leg circumference.
+
+## Camera Presentation Contract (Current App)
+The app now uses split optics by preset and the asset must be authored to match:
+
+1. `FRONT` and `BACK`: orthographic-style reading (infographic-like, minimal perspective distortion).
+2. `ORBIT`: perspective camera for inspection and interaction.
+3. Region glow should stay subtle; mesh form should remain readable with all overlays active.
+4. Base-body silhouette must be readable in FRONT/BACK even at max intensity overlays.
+
 ## Export Checklist (Blender -> SceneKit)
 1. Freeze transforms.
 2. Apply scale/rotation.
@@ -87,9 +130,12 @@ Current renderer also accepts:
 1. On app launch, `loadBundledSceneIfAvailable()` must return true.
 2. `regionNodes.count` should be 39 after scene bind.
 3. Tap interaction returns correct region id/key for all major muscle groups.
-4. `FRONT`, `BACK`, and `ORBIT` camera presets frame the mesh cleanly.
-5. ORBIT drag rotates body while parent `ScrollView` remains locked during interaction.
-6. If asset missing, fallback primitive renderer still functions as non-blocking safety.
+4. `FRONT` and `BACK` views look flat/clean (no exaggerated perspective distortion).
+5. `ORBIT` supports yaw + pitch drag and pinch zoom.
+6. Parent `ScrollView` remains locked whenever `ORBIT` is selected.
+7. Camera framing preserves visible head and feet margins after load.
+8. Overlay intensity does not wash out base silhouette.
+9. If asset missing and fallback is enabled, primitive renderer still functions as non-blocking safety.
 
 ## Patch List (Code Integration)
 1. Add the asset to iOS project resources (`ios/Zenith.xcodeproj/project.pbxproj`).
