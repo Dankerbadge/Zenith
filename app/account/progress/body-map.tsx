@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import Constants from 'expo-constants';
 
 import GlassCard from '../../../components/ui/GlassCard';
 import Screen from '../../../components/ui/Screen';
@@ -39,6 +40,39 @@ function shortDate(dateKey: string): string {
   const day = Number(dayRaw);
   if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return dateKey;
   return `${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
+}
+
+function resolveBuildStamp(): string {
+  const constantsAny = Constants as unknown as {
+    expoConfig?: {
+      version?: string | null;
+      ios?: { buildNumber?: string | number | null } | null;
+    } | null;
+    nativeApplicationVersion?: string | null;
+    nativeBuildVersion?: string | number | null;
+    manifest?: { ios?: { buildNumber?: string | number | null } | null } | null;
+    manifest2?: {
+      extra?: {
+        expoClient?: { ios?: { buildNumber?: string | number | null } | null } | null;
+      } | null;
+    } | null;
+  };
+
+  const version =
+    (typeof constantsAny.expoConfig?.version === 'string' && constantsAny.expoConfig.version) ||
+    (typeof constantsAny.nativeApplicationVersion === 'string' && constantsAny.nativeApplicationVersion) ||
+    null;
+  const buildRaw =
+    constantsAny.expoConfig?.ios?.buildNumber ??
+    constantsAny.nativeBuildVersion ??
+    constantsAny.manifest?.ios?.buildNumber ??
+    constantsAny.manifest2?.extra?.expoClient?.ios?.buildNumber ??
+    null;
+  const build = buildRaw == null ? null : String(buildRaw);
+
+  if (version && build) return `v${version} (${build})`;
+  if (version) return `v${version}`;
+  return 'build unknown';
 }
 
 export default function BodyMap3DProgressScreen() {
@@ -111,6 +145,7 @@ export default function BodyMap3DProgressScreen() {
     const summary = snapshot?.lensSummaries?.[overlayMode];
     return summary?.topRegions || [];
   }, [overlayMode, snapshot]);
+  const buildStamp = useMemo(() => resolveBuildStamp(), []);
 
   return (
     <Screen edges={['top']} aura>
@@ -119,7 +154,10 @@ export default function BodyMap3DProgressScreen() {
           <Pressable onPress={() => router.back()}>
             <Text style={styles.back}>Back</Text>
           </Pressable>
-          <Text style={styles.title}>3D Body Map</Text>
+          <View style={styles.titleStack}>
+            <Text style={styles.title}>3D Body Map</Text>
+            <Text style={styles.buildStamp}>{buildStamp}</Text>
+          </View>
           <Pressable onPress={() => setHistoryVisible((prev) => !prev)}>
             <Text style={styles.historyToggle}>{historyVisible ? 'Hide History' : 'History'}</Text>
           </Pressable>
@@ -294,7 +332,9 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 40, gap: 12 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   back: { color: NEON_THEME.color.neonCyan, fontWeight: '900' },
+  titleStack: { alignItems: 'center', gap: 2 },
   title: { color: NEON_THEME.color.textPrimary, fontWeight: '900', fontSize: 20 },
+  buildStamp: { color: NEON_THEME.color.textSecondary, fontWeight: '700', fontSize: 11 },
   historyToggle: { color: NEON_THEME.color.textSecondary, fontWeight: '800' },
   cardTitle: { color: NEON_THEME.color.textPrimary, fontWeight: '900', fontSize: 14 },
   meta: { color: NEON_THEME.color.textSecondary, fontWeight: '700', marginTop: 10, lineHeight: 18 },
