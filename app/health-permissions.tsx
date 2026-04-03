@@ -67,6 +67,10 @@ export default function HealthPermissionsScreen() {
   const platformLabel = useMemo(() => (Platform.OS === 'ios' ? 'Apple Health' : 'Health data'), []);
   const connectButtonLabel = useMemo(() => (Platform.OS === 'ios' ? 'Connect Apple Health' : 'Connect Health Connect'), []);
   const healthOpenLabel = useMemo(() => (Platform.OS === 'ios' ? 'Open Health' : 'Open Health Connect'), []);
+  const diagnosticButtonLabel = useMemo(
+    () => (Platform.OS === 'ios' ? 'Run Diagnostic' : 'Run Health Connect Diagnostic'),
+    []
+  );
 
   const refreshState = useCallback(async () => {
     const current = await getWearableImportPreferences();
@@ -85,7 +89,7 @@ export default function HealthPermissionsScreen() {
             if (!availability.available) return { state: 'unavailable', detail: { note: 'Health Connect unavailable' } } as any;
             const status = await getHealthConnectPermissionStatus();
             return {
-              state: status === 'granted' ? 'authorized' : status === 'partial' ? 'denied' : 'notDetermined',
+              state: status === 'granted' || status === 'partial' ? 'authorized' : 'notDetermined',
               detail: { note: `Health Connect permission: ${status}` },
             } as any;
           })(),
@@ -174,6 +178,54 @@ export default function HealthPermissionsScreen() {
     if (proofRunning) return;
     setProofRunning(true);
     try {
+      if (Platform.OS === 'android') {
+        const availability = await isHealthConnectAvailable();
+        if (!availability.available) {
+          setBanner({
+            tone: 'warning',
+            message: availability.needsInstall
+              ? 'Health Connect is not installed or needs an update.'
+              : 'Health Connect is unavailable on this device.',
+            actionLabel: 'Open Health Connect',
+            onAction: () => void openHealthConnectSettings(),
+          });
+          return;
+        }
+
+        const status = await getHealthConnectPermissionStatus();
+        if (status === 'denied') {
+          setBanner({
+            tone: 'warning',
+            message: 'Health Connect permission is off. Enable access and retry diagnostic.',
+            actionLabel: 'Open Health Connect',
+            onAction: () => void openHealthConnectSettings(),
+          });
+          return;
+        }
+
+        setImporting(true);
+        try {
+          const result = await importWearableDailySignals(undefined, { updateLastSync: false, force: true });
+          setLastImport(result);
+          if (result.imported) {
+            setBanner({
+              tone: 'info',
+              message: '✅ Health Connect diagnostic passed. Import pipeline is responding.',
+            });
+          } else {
+            setBanner({
+              tone: 'warning',
+              message: result.reason || 'Health Connect diagnostic ran, but no data was imported.',
+              actionLabel: 'Open Health Connect',
+              onAction: () => void openHealthConnectSettings(),
+            });
+          }
+        } finally {
+          setImporting(false);
+        }
+        return;
+      }
+
       const result = await runHealthkitProofOfLifeDiagnostic();
       setProof(result);
 
@@ -231,6 +283,18 @@ export default function HealthPermissionsScreen() {
     if (proofRunning) return;
     setProofRunning(true);
     try {
+      if (Platform.OS === 'android') {
+        const result = await importWearableDailySignals(undefined, { updateLastSync: false, force: true });
+        setLastImport(result);
+        setBanner({
+          tone: result.imported ? 'info' : 'warning',
+          message: result.imported
+            ? 'Force diagnostic completed. Health Connect import refreshed.'
+            : result.reason || 'Force diagnostic completed. No data imported.',
+        });
+        return;
+      }
+
       const result = await runHealthkitProofOfLifeDiagnostic({ force: true });
       setProof(result);
       if (result.summary === 'connected') {
@@ -312,7 +376,7 @@ export default function HealthPermissionsScreen() {
         activeEnergy: prefs.importActiveEnergy,
         sleep: prefs.importSleep,
         restingHeartRate: prefs.importRestingHeartRate,
-      });
+      }, { includeWorkoutRead: true });
       await refreshState();
 
       if (!granted) {
@@ -714,7 +778,7 @@ export default function HealthPermissionsScreen() {
                   onPress={() => void runDiagnostic()}
                   disabled={proofRunning || connectProofRunning || connecting || importing}
                 >
-                  <Text style={styles.secondaryBtnText}>{proofRunning ? 'Running diagnostic…' : 'Run Diagnostic'}</Text>
+                  <Text style={styles.secondaryBtnText}>{proofRunning ? 'Running diagnostic…' : diagnosticButtonLabel}</Text>
                 </Pressable>
                 {proof?.rateLimit?.limited ? (
                   <Pressable

@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getTodaySignalsAuthorizationState,
   tryGetDailyActiveEnergy,
+  tryGetDailyWorkoutSessions,
   tryGetDailySteps,
   tryGetRestingHeartRate,
   tryGetSleepData,
@@ -37,18 +38,8 @@ export type WearableImportPreferences = {
   lastSyncDate?: string;
 };
 
-const DEFAULT_WEARABLE_PREFS: WearableImportPreferences = {
-  connected: false,
-  autoSync: true,
-  importSteps: true,
-  importActiveEnergy: true,
-  importSleep: true,
-  importRestingHeartRate: true,
-  lastSyncDate: undefined,
-};
-
 const LAST_SUCCESSFUL_HEALTH_SYNC_AT_KEY = 'wearable:lastSuccessfulHealthSyncAt';
-const HEALTH_SYNC_STALE_WINDOW_MS = 30 * 60 * 1000;
+const HEALTH_SYNC_STALE_WINDOW_MS = 10 * 60 * 1000;
 
 export async function getLastSuccessfulHealthSyncAt(): Promise<string | null> {
   try {
@@ -161,35 +152,130 @@ function buildImportedWorkoutEntry(input: {
   };
 }
 
-function mergeImportedWorkout(log: any, importedWorkout: WorkoutEntry | null): WorkoutEntry[] {
+function normalizeActivityLabel(activityName: string): string {
+  const raw = String(activityName || 'Workout').trim();
+  if (!raw) return 'Workout';
+  return raw
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/_/g, ' ')
+    .trim();
+}
+
+function mapAppleActivityToWorkoutType(activityName: string): WorkoutEntry['type'] {
+  const normalized = activityName.toLowerCase();
+  if (
+    normalized.includes('strength') ||
+    normalized.includes('weight') ||
+    normalized.includes('lifting') ||
+    normalized.includes('resistance')
+  ) {
+    return 'strength';
+  }
+  if (
+    normalized.includes('yoga') ||
+    normalized.includes('pilates') ||
+    normalized.includes('tai chi') ||
+    normalized.includes('mind') ||
+    normalized.includes('flexibility') ||
+    normalized.includes('cooldown') ||
+    normalized.includes('recovery') ||
+    normalized.includes('mobility')
+  ) {
+    return 'mobility';
+  }
+  return 'cardio';
+}
+
+function inferWorkoutIntensity(durationMin: number, calories: number): WorkoutEntry['intensity'] {
+  const caloriesPerMinute = durationMin > 0 ? calories / durationMin : 0;
+  if (caloriesPerMinute >= 9) return 'hard';
+  if (caloriesPerMinute >= 5) return 'moderate';
+  return 'easy';
+}
+
+function buildAppleImportedWorkoutEntry(
+  session: {
+    id: string;
+    activityName: string;
+    calories: number;
+    durationMin: number;
+    sourceName?: string;
+    start: string;
+  },
+  importedAt: string
+): WorkoutEntry {
+  const durationMin = Math.max(1, Math.round(Number(session.durationMin) || 0));
+  const calories = Math.max(0, Math.round(Number(session.calories) || 0));
+  const type = mapAppleActivityToWorkoutType(session.activityName);
+  const label = normalizeActivityLabel(session.activityName);
+  const intensity = inferWorkoutIntensity(durationMin, calories);
+  const engineType = resolveEngineFromWorkout({ type, label });
+  const effort = computeEffort({
+    durationMin,
+    activeCalories: calories,
+    engine: engineType,
+    intensity,
+  });
+
+  return {
+    id: `imported_workout_apple_health_${session.id}`,
+    ts: session.start,
+    type,
+    intensity,
+    durationMin,
+    minutes: durationMin,
+    caloriesBurned: calories,
+    label,
+    note: `Imported from Apple Health workout session${session.sourceName ? ` (${session.sourceName})` : ''}.`,
+    imported: true,
+    importedSource: 'apple_health',
+    importedAt,
+    sourceLabel: session.sourceName ? `Apple Health · ${session.sourceName}` : 'Apple Health',
+    workoutClass: 'wearable_import',
+    engineType,
+    effortUnits: effort.effortUnits,
+    effortScore: effort.effortScore,
+    intensityBand: effort.intensityBand,
+    effortConfidence: effort.confidence,
+    verifiedEffort: true,
+    sourceAuthority: 'import',
+    metricVersions: createWorkoutMetricVersionSet(),
+    metricsLock: {
+      metricsImmutable: true,
+      metricsLockedAtUtc: importedAt,
+      sessionIntegrityState: 'finalized',
+    },
+  };
+}
+
+function mergeImportedWorkouts(
+  log: any,
+  source: 'apple_health' | 'health_connect',
+  importedWorkouts: WorkoutEntry[],
+  mode: 'replace' | 'upsert'
+): WorkoutEntry[] {
   const existingWorkouts = Array.isArray(log?.workouts) ? [...log.workouts] : [];
-  const importedIds = new Set(existingWorkouts.filter((w: any) => Boolean(w?.imported)).map((w: any) => String(w?.id || '')));
-  const hasUserLoggedWorkout = existingWorkouts.some((w: any) => !w?.imported);
-
-  // Never overwrite user-logged workouts.
-  if (hasUserLoggedWorkout) {
-    return existingWorkouts.filter((w: any) => !w?.imported || importedIds.has(String(w?.id || '')));
+  if (mode === 'replace') {
+    const preserved = existingWorkouts.filter((w: any) => !(w?.imported && w?.importedSource === source));
+    return [...preserved, ...importedWorkouts];
   }
 
-  if (!importedWorkout) {
-    return existingWorkouts.filter((w: any) => !w?.imported);
+  if (importedWorkouts.length === 0) return existingWorkouts;
+  const next = [...existingWorkouts];
+  for (const imported of importedWorkouts) {
+    const idx = next.findIndex((w: any) => String(w?.id || '') === imported.id);
+    if (idx >= 0) {
+      next[idx] = { ...next[idx], ...imported };
+    } else {
+      next.push(imported);
+    }
   }
-
-  const idx = existingWorkouts.findIndex((w: any) => String(w?.id || '') === importedWorkout.id);
-  if (idx >= 0) {
-    existingWorkouts[idx] = {
-      ...existingWorkouts[idx],
-      ...importedWorkout,
-    };
-    return existingWorkouts;
-  }
-
-  return [...existingWorkouts.filter((w: any) => !w?.imported), importedWorkout];
+  return next;
 }
 
 export async function importWearableDailySignals(
   date = todayKey(),
-  options: { updateLastSync?: boolean } = {}
+  options: { updateLastSync?: boolean; force?: boolean } = {}
 ): Promise<WearableImportSnapshot> {
   const isIos = Platform.OS === 'ios';
   const source: WearableImportSnapshot['source'] = isIos ? 'apple_health' : 'health_connect';
@@ -252,7 +338,7 @@ export async function importWearableDailySignals(
       restingHeartRate: wearablePrefs.importRestingHeartRate,
     },
   });
-  if (auth.state !== 'authorized') {
+  if (auth.state === 'unavailable') {
     return {
       date,
       imported: false,
@@ -262,17 +348,12 @@ export async function importWearableDailySignals(
       sleepMinutes: 0,
       restingHeartRate: 0,
       importedAt: new Date().toISOString(),
-      reason:
-        auth.state === 'notDetermined'
-          ? 'Apple Health is not connected yet.'
-          : auth.state === 'denied'
-          ? 'Apple Health access is off. Enable it in Settings > Health > Data Access.'
-          : 'Apple Health is unavailable in this runtime.',
+      reason: 'Apple Health is unavailable in this runtime.',
     };
   }
 
   const targetDate = asDate(date);
-  const [stepsRes, energyRes, sleepRes, rhrRes] = await Promise.all([
+  const [stepsRes, energyRes, sleepRes, rhrRes, workoutsRes] = await Promise.all([
     wearablePrefs.importSteps ? tryGetDailySteps(targetDate) : Promise.resolve({ ok: true, value: 0 as number, error: undefined as string | undefined }),
     wearablePrefs.importActiveEnergy
       ? tryGetDailyActiveEnergy(targetDate)
@@ -281,6 +362,7 @@ export async function importWearableDailySignals(
     wearablePrefs.importRestingHeartRate
       ? tryGetRestingHeartRate()
       : Promise.resolve({ ok: true, value: null as any, error: undefined as string | undefined }),
+    tryGetDailyWorkoutSessions(targetDate),
   ]);
 
   const failures: { label: string; error?: string }[] = [];
@@ -288,106 +370,165 @@ export async function importWearableDailySignals(
   if (wearablePrefs.importActiveEnergy && !energyRes.ok) failures.push({ label: 'Active energy', error: energyRes.error });
   if (wearablePrefs.importSleep && !sleepRes.ok) failures.push({ label: 'Sleep', error: sleepRes.error });
   if (wearablePrefs.importRestingHeartRate && !rhrRes.ok) failures.push({ label: 'Resting HR', error: rhrRes.error });
-
-  if (failures.length > 0) {
-    void captureMessage('health_sync_failed_read_error', {
-      reasonCode: 'sync_failed_read_error',
-      date,
-      failures: failures.map((f) => ({ label: f.label, error: f.error })),
-    });
-
-    // Drop "connected" on read failures so auto-sync stops until the user fixes permissions.
-    if (options.updateLastSync !== false) {
-      await setWearableImportPreferences({ connected: false });
-    }
-
-    const reasonParts = failures
-      .slice(0, 3)
-      .map((f) => `${f.label}${f.error ? ` (${f.error})` : ''}`);
-    return {
-      date,
-      imported: false,
-      source,
-      steps: 0,
-      activeEnergy: 0,
-      sleepMinutes: 0,
-      restingHeartRate: 0,
-      importedAt: new Date().toISOString(),
-      reason:
-        `Apple Health read failed for: ${reasonParts.join(', ')}. ` +
-        `Enable access in Health → Profile → Apps → Zenith (or Settings → Health → Data Access & Devices → Zenith), then try again.`,
-    };
-  }
+  if (!workoutsRes.ok) failures.push({ label: 'Workout sessions', error: workoutsRes.error });
 
   const selectedSteps = wearablePrefs.importSteps ? Number(stepsRes.value) || 0 : 0;
   const selectedActiveEnergy = wearablePrefs.importActiveEnergy ? Number(energyRes.value) || 0 : 0;
   const selectedSleepMinutes = wearablePrefs.importSleep ? Number((sleepRes.value as any)?.duration) || 0 : 0;
   const selectedRestingHeartRate = wearablePrefs.importRestingHeartRate ? Number(rhrRes.value) || 0 : 0;
+  const importedAt = new Date().toISOString();
+
+  const importedSignalReads =
+    (wearablePrefs.importSteps && stepsRes.ok ? 1 : 0) +
+    (wearablePrefs.importActiveEnergy && energyRes.ok ? 1 : 0) +
+    (wearablePrefs.importSleep && sleepRes.ok ? 1 : 0) +
+    (wearablePrefs.importRestingHeartRate && rhrRes.ok ? 1 : 0);
+
+  const importedWorkoutEntries = workoutsRes.ok
+    ? workoutsRes.value.map((session) => buildAppleImportedWorkoutEntry(session, importedAt))
+    : [];
+  const fallbackWorkout = buildImportedWorkoutEntry({
+    date,
+    source,
+    activeEnergy: selectedActiveEnergy,
+    importedAt,
+  });
+  const workoutEntriesForMerge =
+    importedWorkoutEntries.length > 0
+      ? importedWorkoutEntries
+      : fallbackWorkout
+      ? [fallbackWorkout]
+      : [];
+  const importedWorkoutReads = workoutEntriesForMerge.length > 0 ? 1 : 0;
+  const importedAny = importedSignalReads > 0 || importedWorkoutReads > 0;
+
+  const failureSummary = failures
+    .slice(0, 3)
+    .map((f) => `${f.label}${f.error ? ` (${f.error})` : ''}`)
+    .join(', ');
+  const allSignalsDisabled =
+    !wearablePrefs.importSteps && !wearablePrefs.importActiveEnergy && !wearablePrefs.importSleep && !wearablePrefs.importRestingHeartRate;
 
   const snapshot: WearableImportSnapshot = {
     date,
-    imported: true,
+    imported: importedAny,
     source,
     steps: selectedSteps,
     activeEnergy: selectedActiveEnergy,
     sleepMinutes: selectedSleepMinutes,
     restingHeartRate: selectedRestingHeartRate,
-    importedAt: new Date().toISOString(),
+    importedAt,
+    reason: !importedAny
+      ? allSignalsDisabled
+        ? 'No wearable signals are enabled for import.'
+        : failureSummary
+        ? `No data imported. Read failed for: ${failureSummary}.`
+        : auth.state === 'notDetermined'
+        ? 'Apple Health is not connected yet.'
+        : auth.state === 'denied'
+        ? 'Apple Health access is off for selected data types. Enable access in Health settings.'
+        : 'No Apple Health data found for this date.'
+      : failureSummary
+      ? `Imported with partial data. Failed: ${failureSummary}.`
+      : undefined,
   };
 
   const log = await getDailyLog(date);
-  const importedWorkout = buildImportedWorkoutEntry({
-    date,
-    source,
-    activeEnergy: snapshot.activeEnergy,
-    importedAt: snapshot.importedAt,
-  });
-  const mergedWorkouts = mergeImportedWorkout(log, importedWorkout);
-  await saveDailyLog(date, {
-    ...log,
-    wearableSignals: {
-      source,
-      importedAt: snapshot.importedAt,
-      steps: wearablePrefs.importSteps ? snapshot.steps : undefined,
-      activeEnergy: wearablePrefs.importActiveEnergy ? snapshot.activeEnergy : undefined,
-      sleepMinutes: wearablePrefs.importSleep ? snapshot.sleepMinutes : undefined,
-      restingHeartRate: wearablePrefs.importRestingHeartRate ? snapshot.restingHeartRate : undefined,
-    },
-    workouts: mergedWorkouts,
-  });
-  await settleBehaviorDay(date);
-  await setLastSuccessfulHealthSyncAt(snapshot.importedAt);
-  if (options.updateLastSync !== false) {
-    await setWearableImportPreferences({
-      connected: true,
-      lastSyncDate: date,
+  const shouldPersist = importedSignalReads > 0 || workoutsRes.ok || importedWorkoutReads > 0;
+  if (shouldPersist) {
+    const currentWearableSignals = (log?.wearableSignals || {}) as any;
+    const mergedWorkouts = workoutsRes.ok
+      ? mergeImportedWorkouts(log, source, workoutEntriesForMerge, 'replace')
+      : mergeImportedWorkouts(log, source, workoutEntriesForMerge, 'upsert');
+    await saveDailyLog(date, {
+      ...log,
+      wearableSignals: {
+        source,
+        importedAt: snapshot.importedAt,
+        steps: wearablePrefs.importSteps ? (stepsRes.ok ? snapshot.steps : currentWearableSignals.steps) : undefined,
+        activeEnergy: wearablePrefs.importActiveEnergy
+          ? energyRes.ok
+            ? snapshot.activeEnergy
+            : currentWearableSignals.activeEnergy
+          : undefined,
+        sleepMinutes: wearablePrefs.importSleep ? (sleepRes.ok ? snapshot.sleepMinutes : currentWearableSignals.sleepMinutes) : undefined,
+        restingHeartRate: wearablePrefs.importRestingHeartRate
+          ? rhrRes.ok
+            ? snapshot.restingHeartRate
+            : currentWearableSignals.restingHeartRate
+          : undefined,
+      },
+      workouts: mergedWorkouts,
     });
+    await settleBehaviorDay(date);
+    if (importedAny || workoutsRes.ok) {
+      await setLastSuccessfulHealthSyncAt(snapshot.importedAt);
+    }
+    if (options.updateLastSync !== false && (importedAny || workoutsRes.ok)) {
+      await setWearableImportPreferences({
+        connected: true,
+        lastSyncDate: date,
+      });
+    }
   }
 
-  void captureMessage('health_sync_success', {
-    reasonCode: 'sync_success',
-    date,
-    importedAt: snapshot.importedAt,
-    steps: snapshot.steps,
-    activeEnergy: snapshot.activeEnergy,
-    sleepMinutes: snapshot.sleepMinutes,
-    restingHeartRate: snapshot.restingHeartRate,
-  });
+  if (failures.length > 0) {
+    void captureMessage('health_sync_partial_or_failed', {
+      reasonCode: importedAny ? 'sync_partial_success' : 'sync_failed_read_error',
+      date,
+      failures: failures.map((f) => ({ label: f.label, error: f.error })),
+      imported: importedAny,
+      importedWorkoutCount: workoutEntriesForMerge.length,
+    });
+  } else {
+    void captureMessage('health_sync_success', {
+      reasonCode: 'sync_success',
+      date,
+      importedAt: snapshot.importedAt,
+      steps: snapshot.steps,
+      activeEnergy: snapshot.activeEnergy,
+      sleepMinutes: snapshot.sleepMinutes,
+      restingHeartRate: snapshot.restingHeartRate,
+      importedWorkoutCount: workoutEntriesForMerge.length,
+    });
+  }
 
   return snapshot;
 }
 
-export async function syncWearableSignalsIfEnabled(date = todayKey()): Promise<WearableImportSnapshot | null> {
+export async function syncWearableSignalsIfEnabled(
+  date = todayKey(),
+  options: { force?: boolean } = {}
+): Promise<WearableImportSnapshot | null> {
   const prefs = await getWearableImportPreferences();
   if (!prefs.connected || !prefs.autoSync) return null;
   const lastSyncAt = await getLastSuccessfulHealthSyncAt();
-  if (!isStaleSync(lastSyncAt, date)) {
+  if (!options.force && !isStaleSync(lastSyncAt, date)) {
     void captureMessage('health_sync_skipped_fresh', {
       reasonCode: 'sync_skipped_fresh',
       date,
       lastSuccessfulSyncAt: lastSyncAt,
     });
     return null;
+  }
+
+  if (Platform.OS !== 'ios') {
+    try {
+      return await importWearableDailySignals(date, { updateLastSync: true, force: Boolean(options.force) });
+    } catch (error) {
+      void captureException(error, { feature: 'health_sync', op: 'auto_sync_android', date, lastSuccessfulSyncAt: lastSyncAt });
+      return {
+        date,
+        imported: false,
+        source: 'health_connect',
+        steps: 0,
+        activeEnergy: 0,
+        sleepMinutes: 0,
+        restingHeartRate: 0,
+        importedAt: new Date().toISOString(),
+        reason: 'Health Connect sync failed due to a runtime error.',
+      };
+    }
   }
 
   const auth = await getTodaySignalsAuthorizationState({
@@ -398,19 +539,20 @@ export async function syncWearableSignalsIfEnabled(date = todayKey()): Promise<W
       restingHeartRate: prefs.importRestingHeartRate,
     },
   });
-  if (auth.state !== 'authorized') {
+  if (auth.state === 'unavailable' || (auth.state !== 'authorized' && !options.force)) {
     void captureMessage('health_sync_skipped_not_authorized', {
       reasonCode: 'sync_skipped_not_authorized',
       date,
       lastSuccessfulSyncAt: lastSyncAt,
       authState: auth.state,
       authDetail: auth.detail,
+      force: Boolean(options.force),
     });
     return null;
   }
 
   try {
-    return await importWearableDailySignals(date, { updateLastSync: true });
+    return await importWearableDailySignals(date, { updateLastSync: true, force: Boolean(options.force) });
   } catch (error) {
     void captureException(error, { feature: 'health_sync', op: 'auto_sync', date, lastSuccessfulSyncAt: lastSyncAt });
     void captureMessage('health_sync_failed_runtime_error', {

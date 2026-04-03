@@ -26,6 +26,8 @@ export type TodaySignalPermissionPrefs = {
 export type HealthPermissionRequest = {
   // Workout read/write (used for export + workout-based features).
   workouts?: boolean;
+  // Workout read only (used for importing recorded sessions without write permissions).
+  workoutRead?: boolean;
   // Live HR samples (used for workout diagnostics/analytics).
   heartRate?: boolean;
   // Daily signals import (driven by user toggles).
@@ -41,6 +43,25 @@ const DEFAULT_PERMISSION_REQUEST: Required<Pick<HealthPermissionRequest, 'workou
     restingHeartRate: true,
   },
 };
+
+type TodaySignalKey = 'steps' | 'activeEnergy' | 'sleep' | 'restingHeartRate';
+type TodaySignalAuthState = ZenithHealthAuthorizationState | 'disabled';
+type TodaySignalAuthMap = Record<TodaySignalKey, TodaySignalAuthState>;
+
+export interface HealthWorkoutSession {
+  id: string;
+  activityId: number | null;
+  activityName: string;
+  calories: number;
+  durationMin: number;
+  distanceMiles: number;
+  sourceName?: string;
+  sourceId?: string;
+  tracked?: boolean;
+  metadata?: Record<string, unknown> | null;
+  start: string;
+  end: string;
+}
 
 export const HEALTH_TODAY_SIGNAL_TYPES = [
   { key: 'StepCount', label: 'Steps' },
@@ -64,17 +85,24 @@ export async function resetHealthkitLocalState(): Promise<void> {
 
 // Convenience helper for iPhone-only users who only want passive daily signal import.
 // This avoids requesting Workout write permissions (higher denial risk).
-export async function requestReadOnlyHealthPermissions(required: TodaySignalPermissionPrefs = {}): Promise<boolean> {
-  return requestHealthPermissions({
-    workouts: false,
-    heartRate: false,
-    todaySignals: {
-      steps: required.steps ?? true,
-      activeEnergy: required.activeEnergy ?? true,
-      sleep: required.sleep ?? true,
-      restingHeartRate: required.restingHeartRate ?? true,
+export async function requestReadOnlyHealthPermissions(
+  required: TodaySignalPermissionPrefs = {},
+  options: { includeWorkoutRead?: boolean } = {}
+): Promise<boolean> {
+  return requestHealthPermissions(
+    {
+      workouts: false,
+      workoutRead: options.includeWorkoutRead !== false,
+      heartRate: false,
+      todaySignals: {
+        steps: required.steps ?? true,
+        activeEnergy: required.activeEnergy ?? true,
+        sleep: required.sleep ?? true,
+        restingHeartRate: required.restingHeartRate ?? true,
+      },
     },
-  });
+    { allowPartialGrant: true }
+  );
 }
 
 export async function getHealthkitLastRequestInfo(): Promise<{ requestedAt: string | null; lastResult: string | null }> {
@@ -219,8 +247,10 @@ function buildPermissionKeyLists(request: HealthPermissionRequest): { read: stri
     if (today.restingHeartRate) read.push('RestingHeartRate');
   }
   if (request.heartRate) read.push('HeartRate');
-  if (request.workouts) {
+  if (request.workouts || request.workoutRead) {
     read.push('Workout');
+  }
+  if (request.workouts) {
     write.push('Workout');
   }
   return { read: Array.from(new Set(read)), write: Array.from(new Set(write)) };
@@ -728,18 +758,88 @@ function buildTodaySignalsPermissions(AppleHealthKit: AppleHealthKitType, requir
   };
 }
 
+function buildTodaySignalPermissionMap(
+  AppleHealthKit: AppleHealthKitType,
+  required: TodaySignalPermissionPrefs
+): Record<TodaySignalKey, string | null> {
+  const P: any = AppleHealthKit.Constants?.Permissions || {};
+  return {
+    steps: required.steps ? String(P.StepCount || 'StepCount') : null,
+    activeEnergy: required.activeEnergy ? String(P.ActiveEnergyBurned || 'ActiveEnergyBurned') : null,
+    sleep: required.sleep ? String(P.SleepAnalysis || 'SleepAnalysis') : null,
+    restingHeartRate: required.restingHeartRate ? String(P.RestingHeartRate || 'RestingHeartRate') : null,
+  };
+}
+
+function createTodaySignalAuthMap(
+  required: TodaySignalPermissionPrefs,
+  selectedState: ZenithHealthAuthorizationState
+): TodaySignalAuthMap {
+  return {
+    steps: required.steps ? selectedState : 'disabled',
+    activeEnergy: required.activeEnergy ? selectedState : 'disabled',
+    sleep: required.sleep ? selectedState : 'disabled',
+    restingHeartRate: required.restingHeartRate ? selectedState : 'disabled',
+  };
+}
+
+function aggregateTodaySignalAuthState(signals: TodaySignalAuthMap): ZenithHealthAuthorizationState {
+  const selectedStates = (Object.values(signals) as TodaySignalAuthState[]).filter((v) => v !== 'disabled');
+  if (selectedStates.length === 0) return 'authorized';
+  if (selectedStates.includes('authorized')) return 'authorized';
+  if (selectedStates.includes('denied')) return 'denied';
+  if (selectedStates.includes('notDetermined')) return 'notDetermined';
+  if (selectedStates.includes('unavailable')) return 'unavailable';
+  return 'notDetermined';
+}
+
+function signalKeyLabel(key: TodaySignalKey): string {
+  switch (key) {
+    case 'steps':
+      return 'Steps';
+    case 'activeEnergy':
+      return 'Active energy';
+    case 'sleep':
+      return 'Sleep';
+    case 'restingHeartRate':
+      return 'Resting HR';
+    default:
+      return key;
+  }
+}
+
+function readStatusCodeToAuthState(code: HealthStatusCode | undefined): ZenithHealthAuthorizationState {
+  if (code === 2) return 'authorized';
+  if (code === 1) return 'denied';
+  return 'notDetermined';
+}
+
 export async function getTodaySignalsAuthorizationState(input: { required?: TodaySignalPermissionPrefs } = {}): Promise<{
   state: ZenithHealthAuthorizationState;
   detail: { requestedAt?: string | null; lastResult?: string | null; error?: string; note?: string };
+  signals: TodaySignalAuthMap;
 }> {
+  const required: TodaySignalPermissionPrefs =
+    typeof input.required === 'object' && input.required
+      ? { ...DEFAULT_PERMISSION_REQUEST.todaySignals, ...input.required }
+      : DEFAULT_PERMISSION_REQUEST.todaySignals;
+
   const AppleHealthKit = getAppleHealthKit();
   if (!AppleHealthKit) {
-    return { state: 'unavailable', detail: { requestedAt: null, lastResult: null, error: 'HealthKit bridge is not active in this runtime.' } };
+    return {
+      state: 'unavailable',
+      detail: { requestedAt: null, lastResult: null, error: 'HealthKit bridge is not active in this runtime.' },
+      signals: createTodaySignalAuthMap(required, 'unavailable'),
+    };
   }
 
   const availability = await isHealthKitAvailable();
   if (!availability.available) {
-    return { state: 'unavailable', detail: { requestedAt: null, error: availability.error } };
+    return {
+      state: 'unavailable',
+      detail: { requestedAt: null, error: availability.error },
+      signals: createTodaySignalAuthMap(required, 'unavailable'),
+    };
   }
 
   const [requestedAt, lastResult] = await Promise.all([
@@ -747,15 +847,8 @@ export async function getTodaySignalsAuthorizationState(input: { required?: Toda
     AsyncStorage.getItem(HEALTH_AUTH_LAST_RESULT_KEY),
   ]);
 
-  // Use real per-type authorization status when available.
-  // This avoids "green checkmarks without proof" and prevents sync attempts when any required type is denied.
-  const required: TodaySignalPermissionPrefs =
-    typeof input.required === 'object' && input.required
-      ? { ...DEFAULT_PERMISSION_REQUEST.todaySignals, ...input.required }
-      : DEFAULT_PERMISSION_REQUEST.todaySignals;
-  const requested = buildTodaySignalsPermissions(AppleHealthKit, required);
-  const requestedRead = requested.permissions.read || [];
-  if (requestedRead.length === 0) {
+  const selectedSignals = (Object.keys(required) as TodaySignalKey[]).filter((k) => Boolean(required[k]));
+  if (selectedSignals.length === 0) {
     return {
       state: 'authorized',
       detail: {
@@ -763,9 +856,13 @@ export async function getTodaySignalsAuthorizationState(input: { required?: Toda
         lastResult: lastResult || null,
         note: 'No today-signal types selected. Import will not pull any daily signals until enabled.',
       },
+      signals: createTodaySignalAuthMap(required, 'notDetermined'),
     };
   }
-  if ((requested.permissions.read || []).length === 0) {
+
+  const requested = buildTodaySignalsPermissions(AppleHealthKit, required);
+  const requestedRead = requested.permissions.read || [];
+  if (requestedRead.length === 0) {
     return {
       state: 'unavailable',
       detail: {
@@ -773,64 +870,77 @@ export async function getTodaySignalsAuthorizationState(input: { required?: Toda
         lastResult: lastResult || null,
         error: 'HealthKit permission identifiers unavailable. Native module may be misconfigured.',
       },
+      signals: createTodaySignalAuthMap(required, 'unavailable'),
     };
   }
+
+  const permissionBySignal = buildTodaySignalPermissionMap(AppleHealthKit, required);
   const authRes = await getAuthStatusForPermissions(AppleHealthKit, requested);
   if (!authRes.error) {
-    const denied = Object.entries(authRes.status.read)
-      .filter(([, code]) => code === 1)
-      .map(([perm]) => perm);
-    const notDetermined = Object.entries(authRes.status.read)
-      .filter(([, code]) => code === 0)
-      .map(([perm]) => perm);
+    const signals: TodaySignalAuthMap = {
+      steps: required.steps ? readStatusCodeToAuthState(authRes.status.read[permissionBySignal.steps || '']) : 'disabled',
+      activeEnergy: required.activeEnergy
+        ? readStatusCodeToAuthState(authRes.status.read[permissionBySignal.activeEnergy || ''])
+        : 'disabled',
+      sleep: required.sleep ? readStatusCodeToAuthState(authRes.status.read[permissionBySignal.sleep || '']) : 'disabled',
+      restingHeartRate: required.restingHeartRate
+        ? readStatusCodeToAuthState(authRes.status.read[permissionBySignal.restingHeartRate || ''])
+        : 'disabled',
+    };
 
-    if (denied.length > 0) {
-      return {
-        state: 'denied',
-        detail: {
-          requestedAt: requestedAt || null,
-          lastResult: lastResult || null,
-          note: `Denied types: ${denied.slice(0, 6).join(', ')}`,
-        },
-      };
-    }
+    const state = aggregateTodaySignalAuthState(signals);
+    const deniedSignals = (Object.keys(signals) as TodaySignalKey[])
+      .filter((k) => signals[k] === 'denied')
+      .map(signalKeyLabel);
+    const pendingSignals = (Object.keys(signals) as TodaySignalKey[])
+      .filter((k) => signals[k] === 'notDetermined')
+      .map(signalKeyLabel);
+    const authorizedSignals = (Object.keys(signals) as TodaySignalKey[])
+      .filter((k) => signals[k] === 'authorized')
+      .map(signalKeyLabel);
 
-    if (notDetermined.length > 0) {
-      return {
-        state: 'notDetermined',
-        detail: {
-          requestedAt: requestedAt || null,
-          lastResult: lastResult || null,
-          note: `Not determined types: ${notDetermined.slice(0, 6).join(', ')}`,
-        },
-      };
+    let note = 'All selected read types are authorized.';
+    if (state === 'authorized' && (deniedSignals.length > 0 || pendingSignals.length > 0)) {
+      note =
+        `Partial authorization. Authorized: ${authorizedSignals.join(', ') || 'none'}. ` +
+        `${deniedSignals.length ? `Denied: ${deniedSignals.join(', ')}. ` : ''}` +
+        `${pendingSignals.length ? `Not determined: ${pendingSignals.join(', ')}.` : ''}`.trim();
+    } else if (state === 'denied') {
+      note = `Denied signals: ${deniedSignals.join(', ') || 'selected signals'}`;
+    } else if (state === 'notDetermined') {
+      note = `Not determined signals: ${pendingSignals.join(', ') || 'selected signals'}`;
     }
 
     return {
-      state: 'authorized',
+      state,
       detail: {
         requestedAt: requestedAt || null,
         lastResult: lastResult || null,
-        note: 'All required read types are authorized.',
+        note,
       },
+      signals,
     };
   }
 
   // Fallback when native auth status call fails for any reason.
+  let state: ZenithHealthAuthorizationState;
   if (!requestedAt) {
-    return { state: 'notDetermined', detail: { requestedAt: null, lastResult: lastResult || null, error: authRes.error } };
+    state = 'notDetermined';
+  } else if (typeof lastResult === 'string' && (lastResult.startsWith('denied:') || lastResult.startsWith('partial:'))) {
+    state = 'denied';
+  } else {
+    state = 'authorized';
   }
-  if (typeof lastResult === 'string' && (lastResult.startsWith('denied:') || lastResult.startsWith('partial:'))) {
-    return { state: 'denied', detail: { requestedAt, lastResult, error: authRes.error } };
-  }
+
   return {
-    state: 'authorized',
+    state,
     detail: {
-      requestedAt,
+      requestedAt: requestedAt || null,
       lastResult: lastResult || null,
       error: authRes.error,
       note: 'Unable to inspect per-type status; Zenith verifies access via actual reads.',
     },
+    signals: createTodaySignalAuthMap(required, state === 'denied' ? 'denied' : state === 'authorized' ? 'authorized' : 'notDetermined'),
   };
 }
 
@@ -854,6 +964,123 @@ function healthErrToString(err: any): string {
   } catch {
     return String(err);
   }
+}
+
+function mergeIntervalMinutes(intervals: Array<{ startMs: number; endMs: number }>): number {
+  if (intervals.length === 0) return 0;
+  const sorted = intervals
+    .filter((it) => Number.isFinite(it.startMs) && Number.isFinite(it.endMs) && it.endMs > it.startMs)
+    .sort((a, b) => a.startMs - b.startMs);
+  if (sorted.length === 0) return 0;
+
+  let mergedStart = sorted[0].startMs;
+  let mergedEnd = sorted[0].endMs;
+  let totalMs = 0;
+  for (let i = 1; i < sorted.length; i += 1) {
+    const next = sorted[i];
+    if (next.startMs <= mergedEnd) {
+      mergedEnd = Math.max(mergedEnd, next.endMs);
+      continue;
+    }
+    totalMs += mergedEnd - mergedStart;
+    mergedStart = next.startMs;
+    mergedEnd = next.endMs;
+  }
+  totalMs += mergedEnd - mergedStart;
+  return totalMs / 60000;
+}
+
+function toSleepQuality(totalMinutes: number): string {
+  const hours = totalMinutes / 60;
+  if (hours >= 7 && hours <= 9) return 'Excellent';
+  if (hours >= 6 && hours < 7) return 'Good';
+  if (hours >= 5 && hours < 6) return 'Fair';
+  return 'Poor';
+}
+
+function aggregateSleepSamples(rows: any[]): { duration: number; quality: string } | null {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+
+  const sleepValues = new Set(['ASLEEP', 'CORE', 'DEEP', 'REM']);
+  const inBedValues = new Set(['INBED']);
+  const toIntervals = (filter: (sample: any) => boolean) =>
+    rows
+      .filter(filter)
+      .map((sample) => ({
+        startMs: Date.parse(String(sample?.startDate || '')),
+        endMs: Date.parse(String(sample?.endDate || '')),
+      }));
+
+  const sleepMinutes = mergeIntervalMinutes(toIntervals((sample) => sleepValues.has(String(sample?.value || '').toUpperCase())));
+  // If no staged/asleep intervals are present (older devices/sources), fall back to in-bed intervals.
+  const totalMinutes = sleepMinutes > 0 ? sleepMinutes : mergeIntervalMinutes(toIntervals((sample) => inBedValues.has(String(sample?.value || '').toUpperCase())));
+  if (totalMinutes <= 0) return null;
+  return {
+    duration: Math.round(totalMinutes),
+    quality: toSleepQuality(totalMinutes),
+  };
+}
+
+function buildSleepWindow(): { startDate: string; endDate: string } {
+  const endDate = new Date();
+  const startDate = new Date(endDate);
+  startDate.setDate(startDate.getDate() - 1);
+  startDate.setHours(18, 0, 0, 0);
+  return { startDate: startDate.toISOString(), endDate: endDate.toISOString() };
+}
+
+export async function tryGetDailyWorkoutSessions(date: Date = new Date()): Promise<HealthReadCheck<HealthWorkoutSession[]>> {
+  const AppleHealthKit = getAppleHealthKit();
+  if (!AppleHealthKit) return { ok: false, value: [], error: 'HealthKit native module unavailable.' };
+
+  return new Promise((resolve) => {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    AppleHealthKit.getAnchoredWorkouts(
+      {
+        startDate: startOfDay.toISOString(),
+        endDate: endOfDay.toISOString(),
+        limit: 250,
+        ascending: true,
+      } as any,
+      (err: any, results: any) => {
+        if (err) return resolve({ ok: false, value: [], error: healthErrToString(err) || 'Workout read failed.' });
+        const rows = Array.isArray(results?.data) ? results.data : [];
+        const sessions: HealthWorkoutSession[] = rows
+          .map((sample: any): HealthWorkoutSession | null => {
+            const id = String(sample?.id || '').trim();
+            const start = String(sample?.start || '').trim();
+            const end = String(sample?.end || '').trim();
+            const startMs = Date.parse(start);
+            const endMs = Date.parse(end);
+            if (!id || !Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return null;
+            const explicitDurationSec = Number(sample?.duration);
+            const durationSec = Number.isFinite(explicitDurationSec) && explicitDurationSec > 0 ? explicitDurationSec : (endMs - startMs) / 1000;
+            return {
+              id,
+              activityId: Number.isFinite(Number(sample?.activityId)) ? Number(sample?.activityId) : null,
+              activityName: String(sample?.activityName || 'Workout'),
+              calories: Math.max(0, Number(sample?.calories) || 0),
+              durationMin: Math.max(1, Math.round(durationSec / 60)),
+              distanceMiles: Math.max(0, Number(sample?.distance) || 0),
+              sourceName: sample?.sourceName ? String(sample.sourceName) : undefined,
+              sourceId: sample?.sourceId ? String(sample.sourceId) : undefined,
+              tracked: typeof sample?.tracked === 'boolean' ? sample.tracked : undefined,
+              metadata: sample?.metadata && typeof sample.metadata === 'object' ? (sample.metadata as Record<string, unknown>) : null,
+              start,
+              end,
+            };
+          })
+          .filter((session: HealthWorkoutSession | null): session is HealthWorkoutSession => Boolean(session))
+          .sort((a: HealthWorkoutSession, b: HealthWorkoutSession) => Date.parse(a.start) - Date.parse(b.start));
+        resolve({ ok: true, value: sessions });
+      }
+    );
+  });
 }
 
 export async function tryGetDailySteps(date: Date = new Date()): Promise<HealthReadCheck<number>> {
@@ -905,35 +1132,12 @@ export async function tryGetSleepData(): Promise<HealthReadCheck<{ duration: num
   if (!AppleHealthKit) return { ok: false, value: null, error: 'HealthKit native module unavailable.' };
 
   return new Promise((resolve) => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    yesterday.setHours(18, 0, 0, 0);
-
+    const window = buildSleepWindow();
     AppleHealthKit.getSleepSamples(
-      { startDate: yesterday.toISOString(), endDate: new Date().toISOString() } as any,
+      { startDate: window.startDate, endDate: window.endDate } as any,
       (err: any, results: any[]) => {
         if (err) return resolve({ ok: false, value: null, error: healthErrToString(err) || 'Sleep read failed.' });
-        const rows = Array.isArray(results) ? results : [];
-        if (rows.length === 0) return resolve({ ok: true, value: null });
-
-        let totalMinutes = 0;
-        rows.forEach((sample: any) => {
-          if (sample?.value === 'ASLEEP' || sample?.value === 'INBED') {
-            const start = Date.parse(sample?.startDate);
-            const end = Date.parse(sample?.endDate);
-            if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
-              totalMinutes += (end - start) / 60000;
-            }
-          }
-        });
-
-        const hours = totalMinutes / 60;
-        let quality = 'Poor';
-        if (hours >= 7 && hours <= 9) quality = 'Excellent';
-        else if (hours >= 6 && hours < 7) quality = 'Good';
-        else if (hours >= 5 && hours < 6) quality = 'Fair';
-
-        resolve({ ok: true, value: { duration: Math.round(totalMinutes), quality } });
+        resolve({ ok: true, value: aggregateSleepSamples(Array.isArray(results) ? results : []) });
       }
     );
   });
@@ -1106,7 +1310,10 @@ export function calculateTimeInZones(
 /**
  * Request health permissions
  */
-export async function requestHealthPermissions(request: HealthPermissionRequest = DEFAULT_PERMISSION_REQUEST): Promise<boolean> {
+export async function requestHealthPermissions(
+  request: HealthPermissionRequest = DEFAULT_PERMISSION_REQUEST,
+  options: { allowPartialGrant?: boolean } = {}
+): Promise<boolean> {
   const AppleHealthKit = getAppleHealthKit();
   if (!AppleHealthKit) {
     // iOS HealthKit bridge unavailable on this platform/runtime.
@@ -1215,6 +1422,20 @@ export async function requestHealthPermissions(request: HealthPermissionRequest 
 
     if (allAuthorized) {
       await persistHealthAuthResult(`granted:${new Date().toISOString()}`);
+      return true;
+    }
+
+    const hasAnyAuthorized =
+      Object.values(status.read).some((c) => c === 2) ||
+      Object.values(status.write).some((c) => c === 2);
+    if (options.allowPartialGrant && hasAnyAuthorized) {
+      const hint = [
+        denied.length ? `denied=${denied.slice(0, 6).join(',')}` : '',
+        notDetermined.length ? `pending=${notDetermined.slice(0, 6).join(',')}` : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+      await persistHealthAuthResult(`partial:${new Date().toISOString()}:${hint}`);
       return true;
     }
 
@@ -1455,41 +1676,14 @@ export async function getSleepData(): Promise<{ duration: number; quality: strin
   if (!AppleHealthKit) return null;
 
   return new Promise((resolve) => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    yesterday.setHours(18, 0, 0, 0); // Start at 6 PM yesterday
-
-    const options = {
-      startDate: yesterday.toISOString(),
-      endDate: new Date().toISOString()
-    };
+    const options = buildSleepWindow();
 
     AppleHealthKit.getSleepSamples(options, (err: Object, results: any[]) => {
-      if (err || !results || results.length === 0) {
+      if (err) {
         resolve(null);
         return;
       }
-
-      // Calculate total sleep duration
-      let totalMinutes = 0;
-      results.forEach(sample => {
-        if (sample.value === 'ASLEEP' || sample.value === 'INBED') {
-          const start = new Date(sample.startDate).getTime();
-          const end = new Date(sample.endDate).getTime();
-          totalMinutes += (end - start) / 60000;
-        }
-      });
-
-      const hours = totalMinutes / 60;
-      let quality = 'Poor';
-      if (hours >= 7 && hours <= 9) quality = 'Excellent';
-      else if (hours >= 6 && hours < 7) quality = 'Good';
-      else if (hours >= 5 && hours < 6) quality = 'Fair';
-
-      resolve({
-        duration: Math.round(totalMinutes),
-        quality
-      });
+      resolve(aggregateSleepSamples(Array.isArray(results) ? results : []));
     });
   });
 }

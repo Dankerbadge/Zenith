@@ -33,8 +33,9 @@ export default function RootLayout() {
   useEffect(() => {
     let alive = true;
     let interval: ReturnType<typeof setInterval> | null = null;
+    let wearableInterval: ReturnType<typeof setInterval> | null = null;
 
-    const maybeSync = async (reason: 'open' | 'foreground') => {
+    const maybeSync = async () => {
       if (!alive) return;
       if (syncInFlightRef.current) return;
       syncInFlightRef.current = true;
@@ -45,15 +46,18 @@ export default function RootLayout() {
       }
     };
 
-    void maybeSync('open');
+    void maybeSync();
     void flushCloudStateSyncQueue('open');
     interval = setInterval(() => {
       void flushCloudStateSyncQueue('interval');
     }, 30000);
+    wearableInterval = setInterval(() => {
+      void maybeSync();
+    }, 5 * 60 * 1000);
 
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
-        void maybeSync('foreground');
+        void maybeSync();
         void flushCloudStateSyncQueue('foreground');
       } else if (state === 'background' || state === 'inactive') {
         void flushCloudStateSyncQueue('background');
@@ -63,6 +67,7 @@ export default function RootLayout() {
     return () => {
       alive = false;
       if (interval) clearInterval(interval);
+      if (wearableInterval) clearInterval(wearableInterval);
       sub.remove();
     };
   }, []);
