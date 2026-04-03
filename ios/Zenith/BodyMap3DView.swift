@@ -93,11 +93,14 @@ class BodyMap3DView: UIView {
 
   @objc var onRegionPress: RCTBubblingEventBlock?
   @objc var onInteractionStateChange: RCTBubblingEventBlock?
-  @objc var onRendererStateChange: RCTBubblingEventBlock?
+  @objc var onRendererStateChange: RCTBubblingEventBlock? {
+    didSet { emitRendererState() }
+  }
 
   private let scnView = SCNView(frame: .zero)
   private let scene = SCNScene()
   private let bodyRoot = SCNNode()
+  private let focusNode = SCNNode()
   private let cameraNode = SCNNode()
 
   private var regionNodes: [Int: SCNNode] = [:]
@@ -105,8 +108,12 @@ class BodyMap3DView: UIView {
   private var regionScores: [Int: Double] = [:]
   private var cachedOverlayMode: String = "STIMULUS"
   private var orbitYaw: Float = 0
-  private var isOrbitGestureActive = false
-  private var rendererMode: String = "missing_asset"
+  private var orbitPitch: Float = -0.08
+  private var cameraDistance: Float = 3.35
+  private var minCameraDistance: Float = 2.1
+  private var maxCameraDistance: Float = 5.4
+  private var activeGestureCount = 0
+  private var rendererMode: String = "unknown"
 
   override init(frame: CGRect) {
     super.init(frame: frame)
@@ -138,6 +145,8 @@ class BodyMap3DView: UIView {
     ])
 
     scene.rootNode.addChildNode(bodyRoot)
+    focusNode.name = "cameraFocus"
+    bodyRoot.addChildNode(focusNode)
     seedRegionMaps()
     buildLighting()
     buildCamera()
@@ -147,6 +156,7 @@ class BodyMap3DView: UIView {
     } else if shouldUsePrimitiveFallback() {
       buildBaseSilhouette()
       buildRegions()
+      fitLoadedModel(bodyRoot)
       setRendererMode("primitive")
     } else {
       setRendererMode("missing_asset")
@@ -159,6 +169,9 @@ class BodyMap3DView: UIView {
     pan.maximumNumberOfTouches = 1
     pan.cancelsTouchesInView = true
     scnView.addGestureRecognizer(pan)
+    let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
+    pinch.cancelsTouchesInView = true
+    scnView.addGestureRecognizer(pinch)
 
     applyCameraPreset(animated: false)
     applySnapshotFromJson()
@@ -179,70 +192,87 @@ class BodyMap3DView: UIView {
     let key = SCNNode()
     key.light = SCNLight()
     key.light?.type = .omni
-    key.light?.color = UIColor(white: 1.0, alpha: 0.95)
-    key.position = SCNVector3(2.2, 2.1, 2.3)
+    key.light?.color = UIColor(white: 1.0, alpha: 1.0)
+    key.light?.intensity = 1120
+    key.position = SCNVector3(2.35, 2.25, 2.45)
     scene.rootNode.addChildNode(key)
 
     let fill = SCNNode()
     fill.light = SCNLight()
     fill.light?.type = .omni
-    fill.light?.color = UIColor(red: 0.24, green: 0.73, blue: 1.0, alpha: 0.42)
-    fill.position = SCNVector3(-2.1, 1.6, 2.0)
+    fill.light?.color = UIColor(red: 0.92, green: 0.96, blue: 1.0, alpha: 1.0)
+    fill.light?.intensity = 520
+    fill.position = SCNVector3(-2.15, 1.65, 1.9)
     scene.rootNode.addChildNode(fill)
 
-    let back = SCNNode()
-    back.light = SCNLight()
-    back.light?.type = .omni
-    back.light?.color = UIColor(red: 0.95, green: 0.62, blue: 0.26, alpha: 0.30)
-    back.position = SCNVector3(0.0, 1.5, -2.4)
-    scene.rootNode.addChildNode(back)
+    let rim = SCNNode()
+    rim.light = SCNLight()
+    rim.light?.type = .omni
+    rim.light?.color = UIColor(red: 0.78, green: 0.88, blue: 1.0, alpha: 1.0)
+    rim.light?.intensity = 280
+    rim.position = SCNVector3(0.65, 1.55, -2.35)
+    scene.rootNode.addChildNode(rim)
 
     let ambient = SCNNode()
     ambient.light = SCNLight()
     ambient.light?.type = .ambient
-    ambient.light?.color = UIColor(white: 0.13, alpha: 1.0)
+    ambient.light?.color = UIColor(white: 0.18, alpha: 1.0)
+    ambient.light?.intensity = 170
     scene.rootNode.addChildNode(ambient)
   }
 
   private func buildCamera() {
     cameraNode.camera = SCNCamera()
-    cameraNode.camera?.fieldOfView = 48
-    cameraNode.camera?.zNear = 0.1
+    cameraNode.camera?.fieldOfView = 36
+    cameraNode.camera?.zNear = 0.05
     cameraNode.camera?.zFar = 100
+    cameraNode.camera?.automaticallyAdjustsZRange = true
     scene.rootNode.addChildNode(cameraNode)
 
-    let target = SCNLookAtConstraint(target: bodyRoot)
+    let target = SCNLookAtConstraint(target: focusNode)
     target.isGimbalLockEnabled = true
     cameraNode.constraints = [target]
   }
 
-  private func cameraPosition(for preset: String) -> SCNVector3 {
-    switch preset {
-    case "BACK":
-      return SCNVector3(0, 1.0, -3.35)
-    case "ORBIT":
-      return SCNVector3(2.25, 1.0, 2.1)
-    default:
-      return SCNVector3(0, 1.0, 3.35)
-    }
+  private func moveCamera(to position: SCNVector3, animated: Bool) {
+    SCNTransaction.begin()
+    SCNTransaction.animationDuration = animated ? 0.22 : 0.0
+    cameraNode.position = position
+    SCNTransaction.commit()
+  }
+
+  private func focusWorldPosition() -> SCNVector3 {
+    focusNode.presentation.worldPosition
+  }
+
+  private func orbitCameraPosition(around focus: SCNVector3) -> SCNVector3 {
+    let clampedPitch = max(-0.45, min(0.25, orbitPitch))
+    let cosPitch = cos(clampedPitch)
+    return SCNVector3(
+      focus.x + cameraDistance * sin(orbitYaw) * cosPitch,
+      focus.y + cameraDistance * sin(clampedPitch),
+      focus.z + cameraDistance * cos(orbitYaw) * cosPitch
+    )
+  }
+
+  private func updateOrbitCamera(animated: Bool) {
+    moveCamera(to: orbitCameraPosition(around: focusWorldPosition()), animated: animated)
   }
 
   private func applyCameraPreset(animated: Bool) {
     let preset = currentCameraPreset()
-    let position = cameraPosition(for: preset)
-
-    SCNTransaction.begin()
-    SCNTransaction.animationDuration = animated ? 0.22 : 0.0
-    cameraNode.position = position
+    let focus = focusWorldPosition()
     if preset != "ORBIT" {
-      if isOrbitGestureActive {
-        isOrbitGestureActive = false
+      if activeGestureCount > 0 {
+        activeGestureCount = 0
         emitInteractionState(false)
       }
-      orbitYaw = 0
-      bodyRoot.eulerAngles.y = 0
+      let y = focus.y + max(0.06, cameraDistance * 0.06)
+      let z = preset == "BACK" ? (focus.z - cameraDistance) : (focus.z + cameraDistance)
+      moveCamera(to: SCNVector3(focus.x, y, z), animated: animated)
+      return
     }
-    SCNTransaction.commit()
+    updateOrbitCamera(animated: animated)
   }
 
   private func shouldUsePrimitiveFallback() -> Bool {
@@ -251,6 +281,7 @@ class BodyMap3DView: UIView {
 
   private func setRendererMode(_ mode: String) {
     rendererMode = mode
+    emitRendererState()
   }
 
   private func currentCameraPreset() -> String {
@@ -313,18 +344,15 @@ class BodyMap3DView: UIView {
         continue
       }
 
-      let container = SCNNode()
+      let container = loadedScene.rootNode.clone()
       container.name = "bodyMapSceneContainer"
-      for child in loadedScene.rootNode.childNodes {
-        container.addChildNode(child)
-      }
       bodyRoot.addChildNode(container)
 
       seedRegionMaps()
       bindNodesFromLoadedScene(container)
-      applyBaseMaterialToUnmappedNodes(in: container)
 
       if !regionNodes.isEmpty {
+        fitLoadedModel(container)
         return true
       }
 
@@ -343,20 +371,53 @@ class BodyMap3DView: UIView {
 
       node.name = "region:\(mapping.id):\(mapping.key)"
       node.renderingOrder = 10
-      node.geometry?.materials = [self.regionMaterial()]
+      self.prepareRegionMaterials(node)
       self.regionNodes[mapping.id] = node
       self.regionKeys[mapping.id] = mapping.key
       self.regionScores[mapping.id] = 0
     }
   }
 
-  private func applyBaseMaterialToUnmappedNodes(in rootNode: SCNNode) {
-    walkNodes(rootNode) { [weak self] node in
-      guard let self else { return }
-      guard node.geometry != nil else { return }
-      guard !(node.name?.hasPrefix("region:") ?? false) else { return }
-      node.geometry?.materials = [self.baseMaterial()]
+  private func prepareRegionMaterials(_ node: SCNNode) {
+    guard let geometry = node.geometry else { return }
+    if geometry.materials.isEmpty {
+      geometry.materials = [regionMaterial()]
     }
+    for material in geometry.materials {
+      material.lightingModel = .physicallyBased
+      material.multiply.contents = UIColor.white
+      material.emission.contents = UIColor.black
+    }
+  }
+
+  private func fitLoadedModel(_ modelRoot: SCNNode) {
+    let (minB, maxB) = modelRoot.boundingBox
+    let width = maxB.x - minB.x
+    let height = maxB.y - minB.y
+    let depth = maxB.z - minB.z
+
+    guard width > 0.0001, height > 0.0001, depth > 0.0001 else {
+      applyCameraPreset(animated: false)
+      return
+    }
+
+    let center = SCNVector3(
+      (minB.x + maxB.x) * 0.5,
+      (minB.y + maxB.y) * 0.5,
+      (minB.z + maxB.z) * 0.5
+    )
+    modelRoot.pivot = SCNMatrix4MakeTranslation(center.x, center.y, center.z)
+
+    let radius = max(width, max(height, depth)) * 0.5
+    cameraDistance = max(2.8, radius * 3.1)
+    minCameraDistance = max(1.8, radius * 1.8)
+    maxCameraDistance = max(4.2, radius * 5.0)
+    focusNode.position = SCNVector3(0, max(0.06, height * 0.08), 0)
+    orbitYaw = 0
+    orbitPitch = -0.08
+    cameraNode.camera?.fieldOfView = 36
+    cameraNode.camera?.automaticallyAdjustsZRange = true
+    applyCameraPreset(animated: false)
   }
 
   private func walkNodes(_ node: SCNNode, visit: (SCNNode) -> Void) {
@@ -479,21 +540,49 @@ class BodyMap3DView: UIView {
 
     switch gesture.state {
     case .began:
-      isOrbitGestureActive = true
-      emitInteractionState(true)
+      beginInteraction()
     case .changed:
       let translation = gesture.translation(in: scnView)
-      let deltaYaw = Float(translation.x) * 0.0052
-      orbitYaw += deltaYaw
-      bodyRoot.eulerAngles.y = orbitYaw
+      orbitYaw += Float(translation.x) * 0.0048
+      orbitPitch = max(-0.45, min(0.25, orbitPitch - Float(translation.y) * 0.0032))
+      updateOrbitCamera(animated: false)
       gesture.setTranslation(.zero, in: scnView)
     case .ended, .cancelled, .failed:
-      if isOrbitGestureActive {
-        isOrbitGestureActive = false
-        emitInteractionState(false)
-      }
+      endInteraction()
     default:
       break
+    }
+  }
+
+  @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
+    guard currentCameraPreset() == "ORBIT" else { return }
+
+    switch gesture.state {
+    case .began:
+      beginInteraction()
+    case .changed:
+      cameraDistance = max(minCameraDistance, min(maxCameraDistance, cameraDistance / Float(gesture.scale)))
+      updateOrbitCamera(animated: false)
+      gesture.scale = 1.0
+    case .ended, .cancelled, .failed:
+      endInteraction()
+    default:
+      break
+    }
+  }
+
+  private func beginInteraction() {
+    activeGestureCount += 1
+    if activeGestureCount == 1 {
+      emitInteractionState(true)
+    }
+  }
+
+  private func endInteraction() {
+    guard activeGestureCount > 0 else { return }
+    activeGestureCount -= 1
+    if activeGestureCount == 0 {
+      emitInteractionState(false)
     }
   }
 
@@ -572,10 +661,7 @@ class BodyMap3DView: UIView {
       let score = regionScores[id] ?? 0
       let normalized = max(0.0, min(1.0, score / 100.0))
       let color = colorForIntensity(normalized)
-      if let material = node.geometry?.firstMaterial {
-        material.diffuse.contents = color.withAlphaComponent(0.94)
-        material.emission.contents = color.withAlphaComponent(0.16 + CGFloat(normalized) * 0.22)
-      }
+      applyRegionTint(to: node, color: color, normalized: normalized, selected: false)
     }
 
     CATransaction.commit()
@@ -595,18 +681,34 @@ class BodyMap3DView: UIView {
       let baseColor = colorForIntensity(normalized)
 
       node.scale = isSelected ? SCNVector3(1.04, 1.04, 1.04) : SCNVector3(1, 1, 1)
-      if let material = node.geometry?.firstMaterial {
-        if isSelected {
-          material.diffuse.contents = blend(baseColor, UIColor.white, t: 0.08)
-          material.emission.contents = baseColor.withAlphaComponent(0.52)
-        } else {
-          material.diffuse.contents = baseColor.withAlphaComponent(0.94)
-          material.emission.contents = baseColor.withAlphaComponent(0.16 + CGFloat(normalized) * 0.22)
-        }
-      }
+      applyRegionTint(to: node, color: baseColor, normalized: normalized, selected: isSelected)
     }
 
     CATransaction.commit()
+  }
+
+  private func applyRegionTint(to node: SCNNode, color: UIColor, normalized: CGFloat, selected: Bool) {
+    guard let geometry = node.geometry else { return }
+    if geometry.materials.isEmpty {
+      geometry.materials = [regionMaterial()]
+    }
+
+    let tintStrength = selected
+      ? (0.34 + normalized * 0.18)
+      : (0.16 + normalized * 0.20)
+    let tintColor = blend(UIColor.white, color, t: tintStrength)
+    let emissionAlpha = selected
+      ? (0.10 + normalized * 0.10)
+      : (0.02 + normalized * 0.05)
+
+    for material in geometry.materials {
+      material.lightingModel = .physicallyBased
+      material.multiply.contents = tintColor
+      material.emission.contents = color.withAlphaComponent(emissionAlpha)
+      if rendererMode == "primitive" {
+        material.diffuse.contents = color.withAlphaComponent(selected ? 0.92 : 0.84)
+      }
+    }
   }
 
   private func colorForIntensity(_ tIn: CGFloat) -> UIColor {

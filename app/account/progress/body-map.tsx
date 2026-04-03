@@ -23,7 +23,7 @@ import {
 
 const CAMERA_PRESETS = ['FRONT', 'BACK', 'ORBIT'] as const;
 type CameraPreset = (typeof CAMERA_PRESETS)[number];
-type RendererMode = 'asset' | 'primitive' | 'missing_asset' | 'unknown';
+type RendererMode = 'asset' | 'primitive' | 'missing_asset';
 
 function scoreForLens(region: BodyMapRegionSnapshot, lens: BodyMapLens): number {
   if (lens === 'SORENESS') return region.scores.soreness;
@@ -82,7 +82,7 @@ export default function BodyMap3DProgressScreen() {
   const [historyVisible, setHistoryVisible] = useState(false);
   const [selectedRegionId, setSelectedRegionId] = useState<number>(0);
   const [mapInteracting, setMapInteracting] = useState<boolean>(false);
-  const [rendererMode, setRendererMode] = useState<RendererMode>('unknown');
+  const [rendererMode, setRendererMode] = useState<RendererMode | null>(null);
   const [snapshot, setSnapshot] = useState<BodyMapComputedSnapshot | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -204,7 +204,7 @@ export default function BodyMap3DProgressScreen() {
             ))}
           </View>
           <Text style={styles.meta}>
-            Tap a region to inspect details. In ORBIT mode, drag across the map to rotate.
+            Tap a region to inspect details. In ORBIT mode, drag to rotate and pinch to zoom.
           </Text>
         </GlassCard>
 
@@ -243,11 +243,11 @@ export default function BodyMap3DProgressScreen() {
               }}
               onRendererStateChange={(event) => {
                 const payload = event?.nativeEvent as BodyMapRendererStateEvent | undefined;
-                const next = String(payload?.mode || 'unknown');
+                const next = String(payload?.mode || '');
                 if (next === 'asset' || next === 'primitive' || next === 'missing_asset') {
                   setRendererMode(next);
                 } else {
-                  setRendererMode('unknown');
+                  setRendererMode(null);
                 }
               }}
             />
@@ -259,7 +259,7 @@ export default function BodyMap3DProgressScreen() {
           )}
         </GlassCard>
 
-        {Platform.OS === 'ios' && rendererMode !== 'asset' ? (
+        {Platform.OS === 'ios' && rendererMode && rendererMode !== 'asset' ? (
           <GlassCard>
             <Text style={styles.cardTitle}>Renderer Status</Text>
             <Text style={styles.meta}>
