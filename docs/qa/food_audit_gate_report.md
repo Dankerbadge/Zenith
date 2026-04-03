@@ -1,6 +1,6 @@
 # Food Audit Gate Report
 
-- Generated: 2026-04-03T00:59:05.691Z
+- Generated: 2026-04-03T04:59:46.645Z
 - Audit source: docs/qa/FOOD_SYSTEM_PROD_AUDIT.json
 - Gate result: PASS
 
