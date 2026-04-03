@@ -12,7 +12,7 @@ export default function ProgressLayout() {
       <Stack.Screen name="export" />
       <Stack.Screen name="routes" />
       <Stack.Screen name="routes/[routeId]" />
+      <Stack.Screen name="body-map" />
     </Stack>
   );
 }
-

@@ -45,6 +45,10 @@ export default function ProgressHubScreen() {
           </PremiumGate>
         </ListGroup>
 
+        <ListGroup title="Body Map">
+          <ListRow title="3D Body Map" subtitle="Muscle overlay + regional drill-in" onPress={() => open('/account/progress/body-map')} isLast />
+        </ListGroup>
+
         <GlassCard style={styles.note}>
           <Text style={styles.noteTitle}>Accuracy Contract</Text>
           <Text style={styles.noteBody}>

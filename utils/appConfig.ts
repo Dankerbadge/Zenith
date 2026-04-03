@@ -4,7 +4,7 @@
 export const APP_CONFIG = {
   // App Info
   APP_NAME: 'Zenith',
-  APP_VERSION: '1.2.9',
+  APP_VERSION: '1.3.1',
   APP_BUILD: '3',
   
   // Support
