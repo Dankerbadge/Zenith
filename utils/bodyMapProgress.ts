@@ -13,6 +13,19 @@ type RawScores = {
   fatigue: number;
 };
 
+type NormalizationAnchors = {
+  maxStimulus: number;
+  maxSoreness: number;
+  maxPain: number;
+  maxFatigue: number;
+};
+
+type ScoredWorkout = {
+  dateKey: string;
+  workout: WorkoutEntry;
+  timestamp: number;
+};
+
 export type BodyMapRegionScores = {
   stimulus: number;
   soreness: number;
@@ -127,6 +140,8 @@ const MATCHERS: { pattern: RegExp; groups: string[] }[] = [
   { pattern: /yoga|mobility|stretch|recovery/, groups: ['core', 'hipFlexors', 'lowerBack', 'neck'] },
 ];
 
+const SESSION_LOOKBACK_DAYS = 35;
+
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
@@ -140,7 +155,7 @@ function emptyRegionScores(): BodyMapRegionScores {
 }
 
 function getDaysForTimeframe(timeframe: BodyMapTimeframe): number {
-  if (timeframe === 'SESSION') return 1;
+  if (timeframe === 'SESSION') return SESSION_LOOKBACK_DAYS;
   if (timeframe === '28D') return 28;
   return 7;
 }
@@ -246,28 +261,26 @@ function initRawMap(): Record<string, RawScores> {
   return map;
 }
 
-function normalizeRawMap(rawMap: Record<string, RawScores>): Record<string, BodyMapRegionScores> {
-  const maxStimulus = Math.max(0, ...Object.values(rawMap).map((entry) => entry.stimulus));
-  const maxSoreness = Math.max(0, ...Object.values(rawMap).map((entry) => entry.soreness));
-  const maxPain = Math.max(0, ...Object.values(rawMap).map((entry) => entry.pain));
-  const maxFatigue = Math.max(0, ...Object.values(rawMap).map((entry) => entry.fatigue));
+function buildNormalizationAnchors(rawMap: Record<string, RawScores>): NormalizationAnchors {
+  return {
+    maxStimulus: Math.max(0, ...Object.values(rawMap).map((entry) => entry.stimulus)),
+    maxSoreness: Math.max(0, ...Object.values(rawMap).map((entry) => entry.soreness)),
+    maxPain: Math.max(0, ...Object.values(rawMap).map((entry) => entry.pain)),
+    maxFatigue: Math.max(0, ...Object.values(rawMap).map((entry) => entry.fatigue)),
+  };
+}
 
+function normalizeRawMap(rawMap: Record<string, RawScores>, anchors: NormalizationAnchors): Record<string, BodyMapRegionScores> {
   const normalized: Record<string, BodyMapRegionScores> = {};
   for (const region of REGION_CATALOG) {
     const raw = rawMap[region.key] || emptyRawScores();
-    const stimulus = maxStimulus > 0 ? Math.round(clamp((raw.stimulus / maxStimulus) * 100, 0, 100)) : 0;
-    const soreness = maxSoreness > 0 ? Math.round(clamp((raw.soreness / maxSoreness) * 100, 0, 100)) : 0;
-    const pain = maxPain > 0 ? Math.round(clamp((raw.pain / maxPain) * 100, 0, 100)) : 0;
-    const fatigue = maxFatigue > 0 ? Math.round(clamp((raw.fatigue / maxFatigue) * 100, 0, 100)) : 0;
+    const stimulus = anchors.maxStimulus > 0 ? Math.round(clamp((raw.stimulus / anchors.maxStimulus) * 100, 0, 100)) : 0;
+    const soreness = anchors.maxSoreness > 0 ? Math.round(clamp((raw.soreness / anchors.maxSoreness) * 100, 0, 100)) : 0;
+    const pain = anchors.maxPain > 0 ? Math.round(clamp((raw.pain / anchors.maxPain) * 100, 0, 100)) : 0;
+    const fatigue = anchors.maxFatigue > 0 ? Math.round(clamp((raw.fatigue / anchors.maxFatigue) * 100, 0, 100)) : 0;
     const composite = Math.round(clamp(stimulus * 0.45 + soreness * 0.18 + pain * 0.15 + fatigue * 0.22, 0, 100));
 
-    normalized[region.key] = {
-      stimulus,
-      soreness,
-      pain,
-      fatigue,
-      composite,
-    };
+    normalized[region.key] = { stimulus, soreness, pain, fatigue, composite };
   }
   return normalized;
 }
@@ -309,6 +322,50 @@ function lensSummary(regions: BodyMapRegionSnapshot[], lens: BodyMapLens): BodyM
   };
 }
 
+function dateFromWorkout(workout: WorkoutEntry, fallbackDateKey: string): number {
+  const candidates = [workout.ts, (workout as any)?.loggedAtUtc, (workout as any)?.importedAt].map((value) => String(value || '').trim());
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const millis = Date.parse(candidate);
+    if (Number.isFinite(millis)) return millis;
+  }
+  return parseLocalDateKey(fallbackDateKey).getTime();
+}
+
+function collectScoredWorkouts(
+  recentLogs: Array<{ date: string; log: { workouts?: WorkoutEntry[] } }>,
+  timeframe: BodyMapTimeframe
+): ScoredWorkout[] {
+  const all: ScoredWorkout[] = [];
+  for (const row of recentLogs) {
+    const dateKey = String(row?.date || '').trim();
+    if (!dateKey) continue;
+    const workouts = Array.isArray(row?.log?.workouts) ? (row.log.workouts as WorkoutEntry[]) : [];
+    for (const workout of workouts) {
+      all.push({
+        dateKey,
+        workout,
+        timestamp: dateFromWorkout(workout, dateKey),
+      });
+    }
+  }
+
+  if (timeframe !== 'SESSION') {
+    return all;
+  }
+  if (!all.length) {
+    return [];
+  }
+
+  let latest = all[0];
+  for (const entry of all) {
+    if (entry.timestamp > latest.timestamp) {
+      latest = entry;
+    }
+  }
+  return [latest];
+}
+
 export function getBodyMapRegionCatalog(): { id: number; key: string; label: string }[] {
   return REGION_CATALOG.slice();
 }
@@ -320,50 +377,47 @@ export async function computeBodyMapSnapshot(timeframe: BodyMapTimeframe): Promi
 
   const aggregateRaw = initRawMap();
   const dailyRawByDate: Record<string, Record<string, RawScores>> = {};
+  const scoredWorkouts = collectScoredWorkouts(recentLogs, timeframe);
 
-  for (const row of recentLogs) {
-    const dateKey = String(row?.date || '').trim();
-    if (!dateKey) continue;
-
+  for (const item of scoredWorkouts) {
+    const dateKey = item.dateKey;
     if (!dailyRawByDate[dateKey]) {
       dailyRawByDate[dateKey] = initRawMap();
     }
 
-    const workouts = Array.isArray(row?.log?.workouts) ? (row.log.workouts as WorkoutEntry[]) : [];
-    const daysAgo = diffDays(parseLocalDateKey(dateKey), now);
-    const sorenessDecay = Math.exp(-daysAgo / 2.2);
-    const fatigueDecay = Math.exp(-daysAgo / 5.2);
-    const painDecay = Math.exp(-daysAgo / 6.3);
+    const daysAgo = timeframe === 'SESSION' ? 0 : diffDays(parseLocalDateKey(dateKey), now);
+    const sorenessDecay = timeframe === 'SESSION' ? 1 : Math.exp(-daysAgo / 2.2);
+    const fatigueDecay = timeframe === 'SESSION' ? 1 : Math.exp(-daysAgo / 5.2);
+    const painDecay = timeframe === 'SESSION' ? 1 : Math.exp(-daysAgo / 6.3);
 
-    for (const workout of workouts) {
-      const regions = inferWorkoutRegions(workout);
-      if (!regions.length) continue;
+    const regions = inferWorkoutRegions(item.workout);
+    if (!regions.length) continue;
 
-      const perRegionFactor = 1 / regions.length;
-      const baseLoad = workoutBaseLoad(workout);
-      const painBase = painSignal(workout);
+    const perRegionFactor = 1 / regions.length;
+    const baseLoad = workoutBaseLoad(item.workout);
+    const painBase = painSignal(item.workout);
 
-      const stimulusLoad = baseLoad * perRegionFactor;
-      const sorenessLoad = baseLoad * 0.62 * sorenessDecay * perRegionFactor;
-      const fatigueLoad = baseLoad * 0.78 * fatigueDecay * perRegionFactor;
-      const painLoad = painBase * painDecay * perRegionFactor;
+    const stimulusLoad = baseLoad * perRegionFactor;
+    const sorenessLoad = baseLoad * 0.62 * sorenessDecay * perRegionFactor;
+    const fatigueLoad = baseLoad * 0.78 * fatigueDecay * perRegionFactor;
+    const painLoad = painBase * painDecay * perRegionFactor;
 
-      for (const regionKey of regions) {
-        if (!aggregateRaw[regionKey]) continue;
-        aggregateRaw[regionKey].stimulus += stimulusLoad;
-        aggregateRaw[regionKey].soreness += sorenessLoad;
-        aggregateRaw[regionKey].fatigue += fatigueLoad;
-        aggregateRaw[regionKey].pain += painLoad;
+    for (const regionKey of regions) {
+      if (!aggregateRaw[regionKey]) continue;
+      aggregateRaw[regionKey].stimulus += stimulusLoad;
+      aggregateRaw[regionKey].soreness += sorenessLoad;
+      aggregateRaw[regionKey].fatigue += fatigueLoad;
+      aggregateRaw[regionKey].pain += painLoad;
 
-        dailyRawByDate[dateKey][regionKey].stimulus += stimulusLoad;
-        dailyRawByDate[dateKey][regionKey].soreness += sorenessLoad;
-        dailyRawByDate[dateKey][regionKey].fatigue += fatigueLoad;
-        dailyRawByDate[dateKey][regionKey].pain += painLoad;
-      }
+      dailyRawByDate[dateKey][regionKey].stimulus += stimulusLoad;
+      dailyRawByDate[dateKey][regionKey].soreness += sorenessLoad;
+      dailyRawByDate[dateKey][regionKey].fatigue += fatigueLoad;
+      dailyRawByDate[dateKey][regionKey].pain += painLoad;
     }
   }
 
-  const normalized = normalizeRawMap(aggregateRaw);
+  const anchors = buildNormalizationAnchors(aggregateRaw);
+  const normalized = normalizeRawMap(aggregateRaw, anchors);
   const regions: BodyMapRegionSnapshot[] = REGION_CATALOG.map((region) => ({
     id: region.id,
     key: region.key,
@@ -380,14 +434,18 @@ export async function computeBodyMapSnapshot(timeframe: BodyMapTimeframe): Promi
   };
 
   const historyByRegionId: Record<number, BodyMapHistoryPoint[]> = {};
-  const orderedDates = recentLogs.map((row) => String(row.date || '')).filter(Boolean);
   for (const region of REGION_CATALOG) {
     historyByRegionId[region.id] = [];
   }
 
+  const orderedDates =
+    timeframe === 'SESSION'
+      ? Array.from(new Set(scoredWorkouts.map((item) => item.dateKey))).sort()
+      : recentLogs.map((row) => String(row.date || '')).filter(Boolean);
+
   for (const dateKey of orderedDates) {
     const dayRaw = dailyRawByDate[dateKey] || initRawMap();
-    const dayNormalized = normalizeRawMap(dayRaw);
+    const dayNormalized = normalizeRawMap(dayRaw, anchors);
     for (const region of REGION_CATALOG) {
       historyByRegionId[region.id].push({
         date: dateKey,

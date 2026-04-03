@@ -10,5 +10,6 @@ RCT_EXPORT_VIEW_PROPERTY(overlayMode, NSString)
 RCT_EXPORT_VIEW_PROPERTY(cameraPreset, NSString)
 RCT_EXPORT_VIEW_PROPERTY(selectedRegionId, NSNumber)
 RCT_EXPORT_VIEW_PROPERTY(onRegionPress, RCTBubblingEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onInteractionStateChange, RCTBubblingEventBlock)
 
 @end

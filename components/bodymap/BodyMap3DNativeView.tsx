@@ -7,6 +7,10 @@ export type BodyMapRegionPressEvent = {
   score: number;
 };
 
+export type BodyMapInteractionStateEvent = {
+  interacting: boolean;
+};
+
 type BodyMap3DNativeViewProps = {
   style?: StyleProp<ViewStyle>;
   snapshotJson?: string;
@@ -17,6 +21,7 @@ type BodyMap3DNativeViewProps = {
   cameraPreset?: string;
   selectedRegionId?: number;
   onRegionPress?: (event: NativeSyntheticEvent<BodyMapRegionPressEvent>) => void;
+  onInteractionStateChange?: (event: NativeSyntheticEvent<BodyMapInteractionStateEvent>) => void;
 };
 
 const NativeBodyMap3DView = requireNativeComponent<BodyMap3DNativeViewProps>('BodyMap3DView');

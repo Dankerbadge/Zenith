@@ -90,6 +90,7 @@ class BodyMap3DView: UIView {
   }
 
   @objc var onRegionPress: RCTBubblingEventBlock?
+  @objc var onInteractionStateChange: RCTBubblingEventBlock?
 
   private let scnView = SCNView(frame: .zero)
   private let scene = SCNScene()
@@ -100,6 +101,8 @@ class BodyMap3DView: UIView {
   private var regionKeys: [Int: String] = [:]
   private var regionScores: [Int: Double] = [:]
   private var cachedOverlayMode: String = "STIMULUS"
+  private var orbitYaw: Float = 0
+  private var isOrbitGestureActive = false
 
   override init(frame: CGRect) {
     super.init(frame: frame)
@@ -142,6 +145,11 @@ class BodyMap3DView: UIView {
 
     let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
     scnView.addGestureRecognizer(tap)
+    let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+    pan.minimumNumberOfTouches = 1
+    pan.maximumNumberOfTouches = 1
+    pan.cancelsTouchesInView = true
+    scnView.addGestureRecognizer(pan)
 
     applyCameraPreset(animated: false)
     applySnapshotFromJson()
@@ -210,15 +218,26 @@ class BodyMap3DView: UIView {
   }
 
   private func applyCameraPreset(animated: Bool) {
-    let preset = ((cameraPreset as String?)?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased().isEmpty == false)
-      ? (cameraPreset as String?)!.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-      : "FRONT"
+    let preset = currentCameraPreset()
     let position = cameraPosition(for: preset)
 
     SCNTransaction.begin()
     SCNTransaction.animationDuration = animated ? 0.22 : 0.0
     cameraNode.position = position
+    if preset != "ORBIT" {
+      if isOrbitGestureActive {
+        isOrbitGestureActive = false
+        emitInteractionState(false)
+      }
+      orbitYaw = 0
+      bodyRoot.eulerAngles.y = 0
+    }
     SCNTransaction.commit()
+  }
+
+  private func currentCameraPreset() -> String {
+    let trimmed = (cameraPreset as String?)?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() ?? ""
+    return trimmed.isEmpty ? "FRONT" : trimmed
   }
 
   private func baseMaterial() -> SCNMaterial {
@@ -435,6 +454,33 @@ class BodyMap3DView: UIView {
       "regionKey": key,
       "score": score,
     ])
+  }
+
+  @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
+    guard currentCameraPreset() == "ORBIT" else { return }
+
+    switch gesture.state {
+    case .began:
+      isOrbitGestureActive = true
+      emitInteractionState(true)
+    case .changed:
+      let translation = gesture.translation(in: scnView)
+      let deltaYaw = Float(translation.x) * 0.0052
+      orbitYaw += deltaYaw
+      bodyRoot.eulerAngles.y = orbitYaw
+      gesture.setTranslation(.zero, in: scnView)
+    case .ended, .cancelled, .failed:
+      if isOrbitGestureActive {
+        isOrbitGestureActive = false
+        emitInteractionState(false)
+      }
+    default:
+      break
+    }
+  }
+
+  private func emitInteractionState(_ interacting: Bool) {
+    onInteractionStateChange?(["interacting": interacting])
   }
 
   private func resolveRegionNode(_ node: SCNNode?) -> SCNNode? {

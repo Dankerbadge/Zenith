@@ -5,7 +5,10 @@ import { router } from 'expo-router';
 import GlassCard from '../../../components/ui/GlassCard';
 import Screen from '../../../components/ui/Screen';
 import { NEON_THEME } from '../../../constants/neonTheme';
-import BodyMap3DNativeView, { type BodyMapRegionPressEvent } from '../../../components/bodymap/BodyMap3DNativeView';
+import BodyMap3DNativeView, {
+  type BodyMapInteractionStateEvent,
+  type BodyMapRegionPressEvent,
+} from '../../../components/bodymap/BodyMap3DNativeView';
 import {
   BODY_MAP_LENSES,
   BODY_MAP_TIMEFRAMES,
@@ -16,7 +19,7 @@ import {
   type BodyMapTimeframe,
 } from '../../../utils/bodyMapProgress';
 
-const CAMERA_PRESETS = ['FRONT', 'BACK'] as const;
+const CAMERA_PRESETS = ['FRONT', 'BACK', 'ORBIT'] as const;
 type CameraPreset = (typeof CAMERA_PRESETS)[number];
 
 function scoreForLens(region: BodyMapRegionSnapshot, lens: BodyMapLens): number {
@@ -42,6 +45,7 @@ export default function BodyMap3DProgressScreen() {
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('FRONT');
   const [historyVisible, setHistoryVisible] = useState(false);
   const [selectedRegionId, setSelectedRegionId] = useState<number>(0);
+  const [mapInteracting, setMapInteracting] = useState<boolean>(false);
   const [snapshot, setSnapshot] = useState<BodyMapComputedSnapshot | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +111,7 @@ export default function BodyMap3DProgressScreen() {
 
   return (
     <Screen edges={['top']} aura>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} scrollEnabled={!mapInteracting}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()}>
             <Text style={styles.back}>Back</Text>
@@ -158,7 +162,9 @@ export default function BodyMap3DProgressScreen() {
               </Pressable>
             ))}
           </View>
-          <Text style={styles.meta}>Tap a region to inspect details for the selected lens.</Text>
+          <Text style={styles.meta}>
+            Tap a region to inspect details. In ORBIT mode, drag across the map to rotate.
+          </Text>
         </GlassCard>
 
         <GlassCard style={styles.mapCard}>
@@ -188,6 +194,10 @@ export default function BodyMap3DProgressScreen() {
               onRegionPress={(event) => {
                 const payload = event?.nativeEvent as BodyMapRegionPressEvent | undefined;
                 setSelectedRegionId(Number(payload?.regionId || 0));
+              }}
+              onInteractionStateChange={(event) => {
+                const payload = event?.nativeEvent as BodyMapInteractionStateEvent | undefined;
+                setMapInteracting(Boolean(payload?.interacting));
               }}
             />
           ) : (
