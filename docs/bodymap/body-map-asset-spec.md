@@ -78,16 +78,17 @@ Current renderer also accepts:
 ## V3 Silhouette Brief (Highest Priority)
 Target a stylized athletic mannequin, not photorealism. The goal is clean anatomy cues that still read well under flat FRONT/BACK camera views.
 
-### Proportion Targets
-1. Reduce shoulder/delt mass ~10-15%.
-2. Reduce upper-arm/forearm thickness ~15-20%.
-3. Shrink hands and make fingers/palm silhouette less mitten-like.
-4. Increase ribcage-to-waist taper so torso is not cylindrical.
-5. Clarify waist-to-pelvis transition; pelvis slightly wider than waist.
-6. Lengthen lower leg modestly and slim ankles.
-7. Make feet longer and lower profile (less blocky volume).
-8. Add clavicle/neck transition so neck does not emerge as a smooth stump.
-9. Add clearer knee and ankle landmarks.
+### Numeric Proportion Targets (Measure Against v2)
+1. Shoulder width (deltoid outer-to-outer): reduce by 10-15%.
+2. Waist width (narrowest trunk point): reduce by 8-12%.
+3. Upper arm average diameter: reduce by 15-20%.
+4. Forearm average diameter: reduce by 15-20%.
+5. Hand volume: reduce by 25-35%.
+6. Foot height (dorsal to plantar thickness): reduce by 20-30%.
+7. Lower leg length (knee to ankle): increase by 5-8%.
+8. Figure height target: 7.25-7.75 heads tall.
+9. Pelvis width should read wider than waist by 6-10% in FRONT view.
+10. Neck base width should taper into clavicle shelf; no vertical stump transition.
 
 ### Landmark Readability Rules
 1. FRONT and BACK views must show clear torso taper at a glance.
@@ -98,17 +99,24 @@ Target a stylized athletic mannequin, not photorealism. The goal is clean anatom
 ## Overlay Shell Coverage Rules (V3)
 The body should remain visible underneath overlays. Overlays are thin plates, not a full-body suit.
 
-1. Leave elbows, knees, wrists, ankles, hands, and feet mostly base-body.
-2. Reduce torso overlay wraparound so dark base body remains visible between regions.
-3. Keep visible gutters between adjacent regions:
-   - chest vs delts
-   - abs vs obliques
-   - lats vs upper back
-   - quads vs adductors
-   - hamstrings vs glutes
-4. Keep shoulder triplet (`DELTS_FRONT_*`, `DELTS_SIDE_*`, `DELTS_REAR_*`) thin and clearly separated.
-5. Prevent pelvis-region crowding (`GLUTES_*`, `HIP_FLEXORS_*`, `ADDUCTORS_*` should not visually collide).
-6. Keep quad/hamstring shells from wrapping too far around the leg circumference.
+### Zone-by-Zone Coverage Contract
+1. Distal joints and extremities:
+   hands, feet, elbows, knees, wrists, ankles remain mostly base-body (minimal or no overlay shell area).
+2. Torso front:
+   `CHEST_*`, `ABS`, and `OBLIQUES_*` must keep visible gutters so dark base is visible in FRONT.
+3. Torso back:
+   `UPPER_BACK_*`, `LATS_*`, `TRAPS_*`, and `LOWER_BACK` must keep visible gutters in BACK.
+4. Shoulder cluster:
+   `DELTS_FRONT_*`, `DELTS_SIDE_*`, `DELTS_REAR_*` must be thinner shells with explicit seams between each section.
+5. Pelvis cluster:
+   `GLUTES_*`, `HIP_FLEXORS_*`, and `ADDUCTORS_*` must not visually merge in FRONT or BACK.
+6. Legs:
+   `QUADS_*` and `HAMSTRINGS_*` must not wrap so far that the leg reads as a single continuous overlay tube.
+
+### Shell Readability Rules
+1. With all regions tinted, base-body silhouette must remain readable in FRONT and BACK.
+2. No overlay should bridge across a gutter at runtime intensity 100.
+3. Shell thickness should read as a surface plate, not volumetric armor.
 
 ## Camera Presentation Contract (Current App)
 The app now uses split optics by preset and the asset must be authored to match:
@@ -118,13 +126,17 @@ The app now uses split optics by preset and the asset must be authored to match:
 3. Region glow should stay subtle; mesh form should remain readable with all overlays active.
 4. Base-body silhouette must be readable in FRONT/BACK even at max intensity overlays.
 
-## Export Checklist (Blender -> SceneKit)
-1. Freeze transforms.
-2. Apply scale/rotation.
-3. Ensure all overlay nodes keep exact names above.
-4. Remove hidden helper nodes and unapplied modifiers that break exports.
-5. Export to `*.scn` (preferred) or `*.usdz`.
-6. Add to Xcode target resources and verify it is copied into app bundle.
+## Export Contract (Required)
+1. Include one base mesh named `BaseBody` (or a documented equivalent) with no region prefix.
+2. Overlay node names must exactly match the key taxonomy in this document.
+3. Freeze transforms and apply scale/rotation before export.
+4. Keep pivot centered near pelvis for stable framing.
+5. Remove hidden helpers, duplicate shells, and non-render meshes from export.
+6. Ensure normals are clean and consistent (no inside-out panels).
+7. Do not bake glow/emission into textures.
+8. Validate no shell self-intersections against base mesh in bind pose.
+9. Export in one of the accepted runtime formats: `*.scn` (preferred) or `*.usdz`.
+10. Confirm Xcode target resource wiring after replacing the file.
 
 ## Runtime Verification Checklist
 1. On app launch, `loadBundledSceneIfAvailable()` must return true.
@@ -136,6 +148,23 @@ The app now uses split optics by preset and the asset must be authored to match:
 7. Camera framing preserves visible head and feet margins after load.
 8. Overlay intensity does not wash out base silhouette.
 9. If asset missing and fallback is enabled, primitive renderer still functions as non-blocking safety.
+
+## Screenshot Acceptance Pack (Required Every Mesh Iteration)
+Provide all screenshots from the same build stamp and same asset revision.
+
+1. `FRONT` unselected, full overlay tint active.
+2. `BACK` unselected, full overlay tint active.
+3. `ORBIT` 3/4 angle, unselected, full overlay tint active.
+4. Neutral base-body check with overlays visually minimized.
+5. Selected-region check (one torso region, one limb region).
+
+### Automatic Fail Conditions
+1. Torso reads cylindrical/barrel-like in FRONT or BACK.
+2. Shoulders dominate silhouette or appear sphere-like.
+3. Hands/feet attract attention before torso.
+4. Overlays visually merge into a full-body suit.
+5. Dark base-body silhouette is not readable in FRONT/BACK.
+6. FRONT/BACK diverge materially from intended 2D map look.
 
 ## Patch List (Code Integration)
 1. Add the asset to iOS project resources (`ios/Zenith.xcodeproj/project.pbxproj`).
