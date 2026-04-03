@@ -7,6 +7,7 @@ import Screen from '../../../components/ui/Screen';
 import { NEON_THEME } from '../../../constants/neonTheme';
 import BodyMap3DNativeView, {
   type BodyMapInteractionStateEvent,
+  type BodyMapRendererStateEvent,
   type BodyMapRegionPressEvent,
 } from '../../../components/bodymap/BodyMap3DNativeView';
 import {
@@ -21,6 +22,7 @@ import {
 
 const CAMERA_PRESETS = ['FRONT', 'BACK', 'ORBIT'] as const;
 type CameraPreset = (typeof CAMERA_PRESETS)[number];
+type RendererMode = 'asset' | 'primitive' | 'missing_asset' | 'unknown';
 
 function scoreForLens(region: BodyMapRegionSnapshot, lens: BodyMapLens): number {
   if (lens === 'SORENESS') return region.scores.soreness;
@@ -46,6 +48,7 @@ export default function BodyMap3DProgressScreen() {
   const [historyVisible, setHistoryVisible] = useState(false);
   const [selectedRegionId, setSelectedRegionId] = useState<number>(0);
   const [mapInteracting, setMapInteracting] = useState<boolean>(false);
+  const [rendererMode, setRendererMode] = useState<RendererMode>('unknown');
   const [snapshot, setSnapshot] = useState<BodyMapComputedSnapshot | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -187,6 +190,7 @@ export default function BodyMap3DProgressScreen() {
               overlayMode={overlayMode}
               activeLens={overlayMode}
               cameraPreset={cameraPreset}
+              allowPrimitiveFallback={false}
               snapshotJson={snapshotJson}
               stimulusLensJson={stimulusLensJson}
               regionPanelsJson={regionPanelsJson}
@@ -199,6 +203,15 @@ export default function BodyMap3DProgressScreen() {
                 const payload = event?.nativeEvent as BodyMapInteractionStateEvent | undefined;
                 setMapInteracting(Boolean(payload?.interacting));
               }}
+              onRendererStateChange={(event) => {
+                const payload = event?.nativeEvent as BodyMapRendererStateEvent | undefined;
+                const next = String(payload?.mode || 'unknown');
+                if (next === 'asset' || next === 'primitive' || next === 'missing_asset') {
+                  setRendererMode(next);
+                } else {
+                  setRendererMode('unknown');
+                }
+              }}
             />
           ) : (
             <View style={[styles.map, styles.mapFallback]}>
@@ -207,6 +220,17 @@ export default function BodyMap3DProgressScreen() {
             </View>
           )}
         </GlassCard>
+
+        {Platform.OS === 'ios' && rendererMode !== 'asset' ? (
+          <GlassCard>
+            <Text style={styles.cardTitle}>Renderer Status</Text>
+            <Text style={styles.meta}>
+              {rendererMode === 'primitive'
+                ? 'Primitive fallback renderer is active. Add BodyMapModel.scn/usdz to ship the final surface map.'
+                : 'Mesh asset not found. Add BodyMapModel.scn or BodyMapModel.usdz to iOS app resources.'}
+            </Text>
+          </GlassCard>
+        ) : null}
 
         <GlassCard>
           <Text style={styles.cardTitle}>Selection</Text>

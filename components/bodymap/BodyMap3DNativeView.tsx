@@ -11,6 +11,10 @@ export type BodyMapInteractionStateEvent = {
   interacting: boolean;
 };
 
+export type BodyMapRendererStateEvent = {
+  mode: 'asset' | 'primitive' | 'missing_asset';
+};
+
 type BodyMap3DNativeViewProps = {
   style?: StyleProp<ViewStyle>;
   snapshotJson?: string;
@@ -19,9 +23,11 @@ type BodyMap3DNativeViewProps = {
   activeLens?: string;
   overlayMode?: string;
   cameraPreset?: string;
+  allowPrimitiveFallback?: boolean;
   selectedRegionId?: number;
   onRegionPress?: (event: NativeSyntheticEvent<BodyMapRegionPressEvent>) => void;
   onInteractionStateChange?: (event: NativeSyntheticEvent<BodyMapInteractionStateEvent>) => void;
+  onRendererStateChange?: (event: NativeSyntheticEvent<BodyMapRendererStateEvent>) => void;
 };
 
 const NativeBodyMap3DView = requireNativeComponent<BodyMap3DNativeViewProps>('BodyMap3DView');

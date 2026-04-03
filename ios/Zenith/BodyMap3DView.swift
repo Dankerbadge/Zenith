@@ -85,12 +85,15 @@ class BodyMap3DView: UIView {
     didSet { applyCameraPreset(animated: true) }
   }
 
+  @objc var allowPrimitiveFallback: NSNumber?
+
   @objc var selectedRegionId: NSNumber? {
     didSet { applySelection(animated: true) }
   }
 
   @objc var onRegionPress: RCTBubblingEventBlock?
   @objc var onInteractionStateChange: RCTBubblingEventBlock?
+  @objc var onRendererStateChange: RCTBubblingEventBlock?
 
   private let scnView = SCNView(frame: .zero)
   private let scene = SCNScene()
@@ -103,6 +106,7 @@ class BodyMap3DView: UIView {
   private var cachedOverlayMode: String = "STIMULUS"
   private var orbitYaw: Float = 0
   private var isOrbitGestureActive = false
+  private var rendererMode: String = "missing_asset"
 
   override init(frame: CGRect) {
     super.init(frame: frame)
@@ -138,9 +142,14 @@ class BodyMap3DView: UIView {
     buildLighting()
     buildCamera()
 
-    if !loadBundledSceneIfAvailable() {
+    if loadBundledSceneIfAvailable() {
+      setRendererMode("asset")
+    } else if shouldUsePrimitiveFallback() {
       buildBaseSilhouette()
       buildRegions()
+      setRendererMode("primitive")
+    } else {
+      setRendererMode("missing_asset")
     }
 
     let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
@@ -153,6 +162,7 @@ class BodyMap3DView: UIView {
 
     applyCameraPreset(animated: false)
     applySnapshotFromJson()
+    emitRendererState()
   }
 
   private func seedRegionMaps() {
@@ -233,6 +243,14 @@ class BodyMap3DView: UIView {
       bodyRoot.eulerAngles.y = 0
     }
     SCNTransaction.commit()
+  }
+
+  private func shouldUsePrimitiveFallback() -> Bool {
+    allowPrimitiveFallback?.boolValue ?? false
+  }
+
+  private func setRendererMode(_ mode: String) {
+    rendererMode = mode
   }
 
   private func currentCameraPreset() -> String {
@@ -481,6 +499,10 @@ class BodyMap3DView: UIView {
 
   private func emitInteractionState(_ interacting: Bool) {
     onInteractionStateChange?(["interacting": interacting])
+  }
+
+  private func emitRendererState() {
+    onRendererStateChange?(["mode": rendererMode])
   }
 
   private func resolveRegionNode(_ node: SCNNode?) -> SCNNode? {
