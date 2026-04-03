@@ -2,80 +2,91 @@ import Foundation
 import UIKit
 import SceneKit
 import React
-import MachO
-import ObjectiveC.runtime
 
-private let unityRegionPressNotification = Notification.Name("ZenithUnityRegionPressNotification")
-private let unityBridgeGameObject = "BodyMapRuntimeBridge"
-
-@_cdecl("ZenithUnityEmitRegionPress")
-public func ZenithUnityEmitRegionPress(_ regionId: Int32, _ regionKey: UnsafePointer<CChar>?, _ score: Float) {
-  let key = regionKey.map { String(cString: $0) } ?? ""
-  NotificationCenter.default.post(
-    name: unityRegionPressNotification,
-    object: nil,
-    userInfo: [
-      "regionId": Int(regionId),
-      "regionKey": key,
-      "score": Double(score),
-    ]
-  )
+private struct BodyMapRegionDefinition {
+  let id: Int
+  let key: String
 }
+
+private let regionDefinitions: [BodyMapRegionDefinition] = [
+  BodyMapRegionDefinition(id: 1, key: "CHEST_L"),
+  BodyMapRegionDefinition(id: 2, key: "CHEST_R"),
+  BodyMapRegionDefinition(id: 3, key: "DELTS_FRONT_L"),
+  BodyMapRegionDefinition(id: 4, key: "DELTS_FRONT_R"),
+  BodyMapRegionDefinition(id: 5, key: "DELTS_SIDE_L"),
+  BodyMapRegionDefinition(id: 6, key: "DELTS_SIDE_R"),
+  BodyMapRegionDefinition(id: 7, key: "DELTS_REAR_L"),
+  BodyMapRegionDefinition(id: 8, key: "DELTS_REAR_R"),
+  BodyMapRegionDefinition(id: 9, key: "BICEPS_L"),
+  BodyMapRegionDefinition(id: 10, key: "BICEPS_R"),
+  BodyMapRegionDefinition(id: 11, key: "TRICEPS_L"),
+  BodyMapRegionDefinition(id: 12, key: "TRICEPS_R"),
+  BodyMapRegionDefinition(id: 13, key: "FOREARMS_L"),
+  BodyMapRegionDefinition(id: 14, key: "FOREARMS_R"),
+  BodyMapRegionDefinition(id: 15, key: "UPPER_BACK_L"),
+  BodyMapRegionDefinition(id: 16, key: "UPPER_BACK_R"),
+  BodyMapRegionDefinition(id: 17, key: "LATS_L"),
+  BodyMapRegionDefinition(id: 18, key: "LATS_R"),
+  BodyMapRegionDefinition(id: 19, key: "TRAPS_L"),
+  BodyMapRegionDefinition(id: 20, key: "TRAPS_R"),
+  BodyMapRegionDefinition(id: 21, key: "ABS"),
+  BodyMapRegionDefinition(id: 22, key: "OBLIQUES_L"),
+  BodyMapRegionDefinition(id: 23, key: "OBLIQUES_R"),
+  BodyMapRegionDefinition(id: 24, key: "LOWER_BACK"),
+  BodyMapRegionDefinition(id: 25, key: "GLUTES_L"),
+  BodyMapRegionDefinition(id: 26, key: "GLUTES_R"),
+  BodyMapRegionDefinition(id: 27, key: "HIP_FLEXORS_L"),
+  BodyMapRegionDefinition(id: 28, key: "HIP_FLEXORS_R"),
+  BodyMapRegionDefinition(id: 29, key: "ADDUCTORS_L"),
+  BodyMapRegionDefinition(id: 30, key: "ADDUCTORS_R"),
+  BodyMapRegionDefinition(id: 31, key: "QUADS_L"),
+  BodyMapRegionDefinition(id: 32, key: "QUADS_R"),
+  BodyMapRegionDefinition(id: 33, key: "HAMSTRINGS_L"),
+  BodyMapRegionDefinition(id: 34, key: "HAMSTRINGS_R"),
+  BodyMapRegionDefinition(id: 35, key: "CALVES_L"),
+  BodyMapRegionDefinition(id: 36, key: "CALVES_R"),
+  BodyMapRegionDefinition(id: 37, key: "TIBIALIS_L"),
+  BodyMapRegionDefinition(id: 38, key: "TIBIALIS_R"),
+  BodyMapRegionDefinition(id: 39, key: "NECK"),
+]
+
+private let regionIdByKey: [String: Int] = {
+  var map: [String: Int] = [:]
+  for definition in regionDefinitions {
+    map[definition.key] = definition.id
+  }
+  return map
+}()
+
+private let regionKeyById: [Int: String] = {
+  var map: [Int: String] = [:]
+  for definition in regionDefinitions {
+    map[definition.id] = definition.key
+  }
+  return map
+}()
 
 @objc(BodyMap3DView)
 class BodyMap3DView: UIView {
   @objc var snapshotJson: NSString? {
-    didSet {
-      if usingUnity {
-        syncUnitySnapshot()
-      } else {
-        applySnapshotFromJson()
-      }
-    }
+    didSet { applySnapshotFromJson() }
   }
 
-  @objc var stimulusLensJson: NSString? {
-    didSet {
-      if usingUnity {
-        syncUnityStimulusLens()
-      }
-    }
-  }
-
-  @objc var regionPanelsJson: NSString? {
-    didSet {
-      if usingUnity {
-        syncUnityRegionPanels()
-      }
-    }
-  }
-
-  @objc var activeLens: NSString? {
-    didSet {
-      if usingUnity {
-        syncUnityLensSelection()
-      }
-    }
-  }
+  // Kept for bridge compatibility; SceneKit renderer currently consumes `snapshotJson`.
+  @objc var stimulusLensJson: NSString?
+  @objc var regionPanelsJson: NSString?
+  @objc var activeLens: NSString?
 
   @objc var overlayMode: NSString? {
-    didSet {
-      if usingUnity {
-        syncUnityOverlayMode()
-      } else {
-        applySnapshotFromJson()
-      }
-    }
+    didSet { applySnapshotFromJson() }
+  }
+
+  @objc var cameraPreset: NSString? {
+    didSet { applyCameraPreset(animated: true) }
   }
 
   @objc var selectedRegionId: NSNumber? {
-    didSet {
-      if usingUnity {
-        syncUnitySelection()
-      } else {
-        applySelection(animated: true)
-      }
-    }
+    didSet { applySelection(animated: true) }
   }
 
   @objc var onRegionPress: RCTBubblingEventBlock?
@@ -83,15 +94,12 @@ class BodyMap3DView: UIView {
   private let scnView = SCNView(frame: .zero)
   private let scene = SCNScene()
   private let bodyRoot = SCNNode()
+  private let cameraNode = SCNNode()
 
   private var regionNodes: [Int: SCNNode] = [:]
   private var regionKeys: [Int: String] = [:]
   private var regionScores: [Int: Double] = [:]
   private var cachedOverlayMode: String = "STIMULUS"
-
-  private var usingUnity = false
-  private weak var unityEmbeddedView: UIView?
-  private var unityRegionObserver: NSObjectProtocol?
 
   override init(frame: CGRect) {
     super.init(frame: frame)
@@ -103,29 +111,15 @@ class BodyMap3DView: UIView {
     commonInit()
   }
 
-  deinit {
-    if let observer = unityRegionObserver {
-      NotificationCenter.default.removeObserver(observer)
-    }
-  }
-
   private func commonInit() {
     backgroundColor = .clear
-
-    if let unityView = UnityBodyMapRuntime.shared.attachEmbeddedView(to: self) {
-      usingUnity = true
-      unityEmbeddedView = unityView
-      observeUnityRegionPresses()
-      syncUnityState()
-      return
-    }
 
     scnView.translatesAutoresizingMaskIntoConstraints = false
     scnView.backgroundColor = UIColor(red: 0.02, green: 0.03, blue: 0.07, alpha: 1.0)
     scnView.scene = scene
     scnView.autoenablesDefaultLighting = false
-    scnView.allowsCameraControl = true
-    scnView.rendersContinuously = true
+    scnView.allowsCameraControl = false
+    scnView.rendersContinuously = false
     scnView.antialiasingMode = .multisampling4X
 
     addSubview(scnView)
@@ -137,146 +131,113 @@ class BodyMap3DView: UIView {
     ])
 
     scene.rootNode.addChildNode(bodyRoot)
+    seedRegionMaps()
     buildLighting()
     buildCamera()
-    buildBaseSilhouette()
-    buildRegions()
+
+    if !loadBundledSceneIfAvailable() {
+      buildBaseSilhouette()
+      buildRegions()
+    }
 
     let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
     scnView.addGestureRecognizer(tap)
+
+    applyCameraPreset(animated: false)
+    applySnapshotFromJson()
   }
 
-  private func syncUnityState() {
-    guard usingUnity else { return }
-    syncUnitySnapshot()
-    syncUnityStimulusLens()
-    syncUnityRegionPanels()
-    syncUnityLensSelection()
-    syncUnityOverlayMode()
-    syncUnitySelection()
-  }
-
-  private func syncUnitySnapshot() {
-    guard usingUnity else { return }
-    let payload = (snapshotJson as String?) ?? "{}"
-    UnityBodyMapRuntime.shared.sendMessage(method: "ApplySnapshotJson", message: payload)
-  }
-
-  private func syncUnityStimulusLens() {
-    guard usingUnity else { return }
-    guard let payload = stimulusLensJson as String?, !payload.isEmpty else { return }
-    UnityBodyMapRuntime.shared.sendMessage(method: "ApplyStimulusLensJson", message: payload)
-  }
-
-  private func syncUnityRegionPanels() {
-    guard usingUnity else { return }
-    guard let payload = regionPanelsJson as String?, !payload.isEmpty else { return }
-    UnityBodyMapRuntime.shared.sendMessage(method: "ApplyRegionPanelJson", message: payload)
-  }
-
-  private func syncUnityLensSelection() {
-    guard usingUnity else { return }
-    guard let lens = (activeLens as String?)?.trimmingCharacters(in: .whitespacesAndNewlines), !lens.isEmpty else { return }
-    UnityBodyMapRuntime.shared.sendMessage(method: "ApplyStimulusLensName", message: lens)
-  }
-
-  private func syncUnityOverlayMode() {
-    guard usingUnity else { return }
-    guard let mode = (overlayMode as String?)?.trimmingCharacters(in: .whitespacesAndNewlines), !mode.isEmpty else { return }
-    UnityBodyMapRuntime.shared.sendMessage(method: "ApplyOverlayModeName", message: mode)
-  }
-
-  private func syncUnitySelection() {
-    guard usingUnity else { return }
-    let regionId = selectedRegionId?.intValue ?? 0
-    UnityBodyMapRuntime.shared.sendMessage(method: "SetSelectedRegionIdFromNative", message: String(regionId))
-  }
-
-  private func observeUnityRegionPresses() {
-    unityRegionObserver = NotificationCenter.default.addObserver(
-      forName: unityRegionPressNotification,
-      object: nil,
-      queue: .main
-    ) { [weak self] note in
-      guard let self else { return }
-      guard self.usingUnity else { return }
-      let userInfo = note.userInfo ?? [:]
-      let id = (userInfo["regionId"] as? NSNumber)?.intValue ?? (userInfo["regionId"] as? Int) ?? 0
-      let key = (userInfo["regionKey"] as? String) ?? ""
-      let score = (userInfo["score"] as? NSNumber)?.doubleValue ?? (userInfo["score"] as? Double) ?? 0
-      self.selectedRegionId = NSNumber(value: id)
-      self.onRegionPress?([
-        "regionId": id,
-        "regionKey": key,
-        "score": score,
-      ])
+  private func seedRegionMaps() {
+    regionNodes.removeAll()
+    regionKeys.removeAll()
+    regionScores.removeAll()
+    for region in regionDefinitions {
+      regionKeys[region.id] = region.key
+      regionScores[region.id] = 0
     }
   }
 
   private func buildLighting() {
-    guard !usingUnity else { return }
-
     let key = SCNNode()
     key.light = SCNLight()
     key.light?.type = .omni
     key.light?.color = UIColor(white: 1.0, alpha: 0.95)
-    key.position = SCNVector3(2.4, 2.2, 2.6)
+    key.position = SCNVector3(2.2, 2.1, 2.3)
     scene.rootNode.addChildNode(key)
 
     let fill = SCNNode()
     fill.light = SCNLight()
     fill.light?.type = .omni
-    fill.light?.color = UIColor(red: 0.35, green: 0.72, blue: 1.0, alpha: 0.55)
-    fill.position = SCNVector3(-2.0, 1.8, 2.4)
+    fill.light?.color = UIColor(red: 0.24, green: 0.73, blue: 1.0, alpha: 0.42)
+    fill.position = SCNVector3(-2.1, 1.6, 2.0)
     scene.rootNode.addChildNode(fill)
 
-    let rim = SCNNode()
-    rim.light = SCNLight()
-    rim.light?.type = .omni
-    rim.light?.color = UIColor(red: 0.7, green: 0.3, blue: 1.0, alpha: 0.45)
-    rim.position = SCNVector3(0.0, 1.6, -2.8)
-    scene.rootNode.addChildNode(rim)
+    let back = SCNNode()
+    back.light = SCNLight()
+    back.light?.type = .omni
+    back.light?.color = UIColor(red: 0.95, green: 0.62, blue: 0.26, alpha: 0.30)
+    back.position = SCNVector3(0.0, 1.5, -2.4)
+    scene.rootNode.addChildNode(back)
 
     let ambient = SCNNode()
     ambient.light = SCNLight()
     ambient.light?.type = .ambient
-    ambient.light?.color = UIColor(white: 0.12, alpha: 1.0)
+    ambient.light?.color = UIColor(white: 0.13, alpha: 1.0)
     scene.rootNode.addChildNode(ambient)
   }
 
   private func buildCamera() {
-    guard !usingUnity else { return }
-
-    let camNode = SCNNode()
-    camNode.camera = SCNCamera()
-    camNode.camera?.fieldOfView = 48
-    camNode.camera?.zNear = 0.1
-    camNode.camera?.zFar = 100
-    camNode.position = SCNVector3(0, 1.0, 3.6)
-    scene.rootNode.addChildNode(camNode)
+    cameraNode.camera = SCNCamera()
+    cameraNode.camera?.fieldOfView = 48
+    cameraNode.camera?.zNear = 0.1
+    cameraNode.camera?.zFar = 100
+    scene.rootNode.addChildNode(cameraNode)
 
     let target = SCNLookAtConstraint(target: bodyRoot)
     target.isGimbalLockEnabled = true
-    camNode.constraints = [target]
+    cameraNode.constraints = [target]
+  }
+
+  private func cameraPosition(for preset: String) -> SCNVector3 {
+    switch preset {
+    case "BACK":
+      return SCNVector3(0, 1.0, -3.35)
+    case "ORBIT":
+      return SCNVector3(2.25, 1.0, 2.1)
+    default:
+      return SCNVector3(0, 1.0, 3.35)
+    }
+  }
+
+  private func applyCameraPreset(animated: Bool) {
+    let preset = ((cameraPreset as String?)?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased().isEmpty == false)
+      ? (cameraPreset as String?)!.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+      : "FRONT"
+    let position = cameraPosition(for: preset)
+
+    SCNTransaction.begin()
+    SCNTransaction.animationDuration = animated ? 0.22 : 0.0
+    cameraNode.position = position
+    SCNTransaction.commit()
   }
 
   private func baseMaterial() -> SCNMaterial {
-    let mat = SCNMaterial()
-    mat.diffuse.contents = UIColor(red: 0.08, green: 0.1, blue: 0.16, alpha: 1)
-    mat.roughness.contents = 0.85
-    mat.metalness.contents = 0.05
-    mat.lightingModel = .physicallyBased
-    return mat
+    let material = SCNMaterial()
+    material.diffuse.contents = UIColor(red: 0.08, green: 0.1, blue: 0.14, alpha: 1)
+    material.roughness.contents = 0.95
+    material.metalness.contents = 0.0
+    material.lightingModel = .physicallyBased
+    return material
   }
 
   private func regionMaterial() -> SCNMaterial {
-    let mat = SCNMaterial()
-    mat.diffuse.contents = UIColor(red: 0.22, green: 0.28, blue: 0.35, alpha: 1)
-    mat.emission.contents = UIColor.black
-    mat.roughness.contents = 0.55
-    mat.metalness.contents = 0.02
-    mat.lightingModel = .physicallyBased
-    return mat
+    let material = SCNMaterial()
+    material.diffuse.contents = UIColor(red: 0.20, green: 0.25, blue: 0.31, alpha: 1)
+    material.emission.contents = UIColor.black
+    material.roughness.contents = 0.50
+    material.metalness.contents = 0.0
+    material.lightingModel = .physicallyBased
+    return material
   }
 
   private func addBaseNode(_ geometry: SCNGeometry, position: SCNVector3) {
@@ -298,9 +259,102 @@ class BodyMap3DView: UIView {
     regionScores[id] = 0
   }
 
-  private func buildBaseSilhouette() {
-    guard !usingUnity else { return }
+  // If a bundled scene exists, this maps region nodes by key/id naming convention.
+  // Expected region names: "<KEY>" or "region:<id>:<KEY>" or "region_<KEY>".
+  private func loadBundledSceneIfAvailable() -> Bool {
+    let candidates: [(String, String)] = [
+      ("BodyMapModel", "scn"),
+      ("BodyMap", "scn"),
+      ("BodyMapModel", "usdz"),
+      ("BodyMap", "usdz"),
+      ("body_map", "scn"),
+    ]
 
+    for candidate in candidates {
+      guard let url = Bundle.main.url(forResource: candidate.0, withExtension: candidate.1),
+            let loadedScene = try? SCNScene(url: url, options: nil) else {
+        continue
+      }
+
+      let container = SCNNode()
+      container.name = "bodyMapSceneContainer"
+      for child in loadedScene.rootNode.childNodes {
+        container.addChildNode(child)
+      }
+      bodyRoot.addChildNode(container)
+
+      seedRegionMaps()
+      bindNodesFromLoadedScene(container)
+      applyBaseMaterialToUnmappedNodes(in: container)
+
+      if !regionNodes.isEmpty {
+        return true
+      }
+
+      container.removeFromParentNode()
+    }
+
+    seedRegionMaps()
+    return false
+  }
+
+  private func bindNodesFromLoadedScene(_ rootNode: SCNNode) {
+    walkNodes(rootNode) { [weak self] node in
+      guard let self else { return }
+      guard node.geometry != nil else { return }
+      guard let mapping = self.resolveRegionMapping(for: node) else { return }
+
+      node.name = "region:\(mapping.id):\(mapping.key)"
+      node.renderingOrder = 10
+      node.geometry?.materials = [self.regionMaterial()]
+      self.regionNodes[mapping.id] = node
+      self.regionKeys[mapping.id] = mapping.key
+      self.regionScores[mapping.id] = 0
+    }
+  }
+
+  private func applyBaseMaterialToUnmappedNodes(in rootNode: SCNNode) {
+    walkNodes(rootNode) { [weak self] node in
+      guard let self else { return }
+      guard node.geometry != nil else { return }
+      guard !(node.name?.hasPrefix("region:") ?? false) else { return }
+      node.geometry?.materials = [self.baseMaterial()]
+    }
+  }
+
+  private func walkNodes(_ node: SCNNode, visit: (SCNNode) -> Void) {
+    visit(node)
+    for child in node.childNodes {
+      walkNodes(child, visit: visit)
+    }
+  }
+
+  private func resolveRegionMapping(for node: SCNNode) -> (id: Int, key: String)? {
+    guard let rawName = node.name?.trimmingCharacters(in: .whitespacesAndNewlines), !rawName.isEmpty else { return nil }
+    let upperName = rawName.uppercased()
+
+    if upperName.hasPrefix("REGION:") {
+      let parts = upperName.split(separator: ":")
+      if parts.count >= 3, let id = Int(parts[1]), let key = regionKeyById[id] {
+        return (id, key)
+      }
+    }
+
+    if let id = regionIdByKey[upperName] {
+      return (id, upperName)
+    }
+
+    if upperName.hasPrefix("REGION_") {
+      let key = String(upperName.dropFirst("REGION_".count))
+      if let id = regionIdByKey[key] {
+        return (id, key)
+      }
+    }
+
+    return nil
+  }
+
+  private func buildBaseSilhouette() {
     addBaseNode(SCNCapsule(capRadius: 0.24, height: 0.86), position: SCNVector3(0, 0.95, 0))
     addBaseNode(SCNSphere(radius: 0.14), position: SCNVector3(0, 1.48, 0))
     addBaseNode(SCNCapsule(capRadius: 0.09, height: 0.44), position: SCNVector3(-0.43, 0.92, 0))
@@ -310,13 +364,9 @@ class BodyMap3DView: UIView {
   }
 
   private func buildRegions() {
-    guard !usingUnity else { return }
-
-    // Chest
     addRegionNode(id: 1, key: "CHEST_L", geometry: SCNSphere(radius: 0.12), position: SCNVector3(-0.16, 1.07, 0.16))
     addRegionNode(id: 2, key: "CHEST_R", geometry: SCNSphere(radius: 0.12), position: SCNVector3(0.16, 1.07, 0.16))
 
-    // Delts
     addRegionNode(id: 3, key: "DELTS_FRONT_L", geometry: SCNSphere(radius: 0.08), position: SCNVector3(-0.33, 1.15, 0.15))
     addRegionNode(id: 4, key: "DELTS_FRONT_R", geometry: SCNSphere(radius: 0.08), position: SCNVector3(0.33, 1.15, 0.15))
     addRegionNode(id: 5, key: "DELTS_SIDE_L", geometry: SCNSphere(radius: 0.085), position: SCNVector3(-0.40, 1.13, 0.00))
@@ -324,7 +374,6 @@ class BodyMap3DView: UIView {
     addRegionNode(id: 7, key: "DELTS_REAR_L", geometry: SCNSphere(radius: 0.08), position: SCNVector3(-0.33, 1.15, -0.15))
     addRegionNode(id: 8, key: "DELTS_REAR_R", geometry: SCNSphere(radius: 0.08), position: SCNVector3(0.33, 1.15, -0.15))
 
-    // Arms
     addRegionNode(id: 9, key: "BICEPS_L", geometry: SCNCapsule(capRadius: 0.055, height: 0.2), position: SCNVector3(-0.46, 0.98, 0.11))
     addRegionNode(id: 10, key: "BICEPS_R", geometry: SCNCapsule(capRadius: 0.055, height: 0.2), position: SCNVector3(0.46, 0.98, 0.11))
     addRegionNode(id: 11, key: "TRICEPS_L", geometry: SCNCapsule(capRadius: 0.055, height: 0.2), position: SCNVector3(-0.46, 0.98, -0.11))
@@ -332,7 +381,6 @@ class BodyMap3DView: UIView {
     addRegionNode(id: 13, key: "FOREARMS_L", geometry: SCNCapsule(capRadius: 0.048, height: 0.22), position: SCNVector3(-0.52, 0.74, 0.0))
     addRegionNode(id: 14, key: "FOREARMS_R", geometry: SCNCapsule(capRadius: 0.048, height: 0.22), position: SCNVector3(0.52, 0.74, 0.0))
 
-    // Back + lats + traps
     addRegionNode(id: 15, key: "UPPER_BACK_L", geometry: SCNBox(width: 0.17, height: 0.17, length: 0.07, chamferRadius: 0.035), position: SCNVector3(-0.18, 1.09, -0.19))
     addRegionNode(id: 16, key: "UPPER_BACK_R", geometry: SCNBox(width: 0.17, height: 0.17, length: 0.07, chamferRadius: 0.035), position: SCNVector3(0.18, 1.09, -0.19))
     addRegionNode(id: 17, key: "LATS_L", geometry: SCNBox(width: 0.16, height: 0.20, length: 0.07, chamferRadius: 0.03), position: SCNVector3(-0.22, 0.90, -0.18))
@@ -340,13 +388,11 @@ class BodyMap3DView: UIView {
     addRegionNode(id: 19, key: "TRAPS_L", geometry: SCNSphere(radius: 0.07), position: SCNVector3(-0.10, 1.28, -0.12))
     addRegionNode(id: 20, key: "TRAPS_R", geometry: SCNSphere(radius: 0.07), position: SCNVector3(0.10, 1.28, -0.12))
 
-    // Core
     addRegionNode(id: 21, key: "ABS", geometry: SCNBox(width: 0.24, height: 0.33, length: 0.07, chamferRadius: 0.03), position: SCNVector3(0, 0.92, 0.18))
     addRegionNode(id: 22, key: "OBLIQUES_L", geometry: SCNBox(width: 0.09, height: 0.25, length: 0.07, chamferRadius: 0.02), position: SCNVector3(-0.18, 0.92, 0.16))
     addRegionNode(id: 23, key: "OBLIQUES_R", geometry: SCNBox(width: 0.09, height: 0.25, length: 0.07, chamferRadius: 0.02), position: SCNVector3(0.18, 0.92, 0.16))
     addRegionNode(id: 24, key: "LOWER_BACK", geometry: SCNBox(width: 0.24, height: 0.18, length: 0.07, chamferRadius: 0.025), position: SCNVector3(0, 0.76, -0.18))
 
-    // Hips/legs
     addRegionNode(id: 25, key: "GLUTES_L", geometry: SCNSphere(radius: 0.10), position: SCNVector3(-0.12, 0.64, -0.18))
     addRegionNode(id: 26, key: "GLUTES_R", geometry: SCNSphere(radius: 0.10), position: SCNVector3(0.12, 0.64, -0.18))
     addRegionNode(id: 27, key: "HIP_FLEXORS_L", geometry: SCNSphere(radius: 0.075), position: SCNVector3(-0.13, 0.67, 0.16))
@@ -362,29 +408,24 @@ class BodyMap3DView: UIView {
     addRegionNode(id: 37, key: "TIBIALIS_L", geometry: SCNCapsule(capRadius: 0.055, height: 0.28), position: SCNVector3(-0.12, 0.04, 0.1))
     addRegionNode(id: 38, key: "TIBIALIS_R", geometry: SCNCapsule(capRadius: 0.055, height: 0.28), position: SCNVector3(0.12, 0.04, 0.1))
 
-    // Neck
     addRegionNode(id: 39, key: "NECK", geometry: SCNCapsule(capRadius: 0.06, height: 0.15), position: SCNVector3(0, 1.33, 0.0))
   }
 
   @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
-    guard !usingUnity else { return }
-
     let point = gesture.location(in: scnView)
     let hits = scnView.hitTest(point, options: [SCNHitTestOption.searchMode: SCNHitTestSearchMode.all.rawValue])
 
-    guard let hit = hits.first(where: { $0.node.name?.hasPrefix("region:") == true }),
-          let name = hit.node.name else {
+    guard let mappedNode = hits.compactMap({ resolveRegionNode($0.node) }).first,
+          let name = mappedNode.name else {
       selectedRegionId = 0
       applySelection(animated: true)
       onRegionPress?(["regionId": 0, "regionKey": "", "score": 0])
       return
     }
 
-    let comps = name.split(separator: ":")
-    guard comps.count >= 3, let regionId = Int(comps[1]) else {
-      return
-    }
-    let key = String(comps[2])
+    let parts = name.split(separator: ":")
+    guard parts.count >= 3, let regionId = Int(parts[1]) else { return }
+    let key = String(parts[2])
     let score = regionScores[regionId] ?? 0
 
     selectedRegionId = NSNumber(value: regionId)
@@ -396,14 +437,20 @@ class BodyMap3DView: UIView {
     ])
   }
 
-  private func applySnapshotFromJson() {
-    guard !usingUnity else { return }
-
-    guard let json = snapshotJson as String? else {
-      return
+  private func resolveRegionNode(_ node: SCNNode?) -> SCNNode? {
+    var cursor = node
+    while let current = cursor {
+      if current.name?.hasPrefix("region:") == true {
+        return current
+      }
+      cursor = current.parent
     }
+    return nil
+  }
 
-    guard let data = json.data(using: .utf8),
+  private func applySnapshotFromJson() {
+    guard let json = snapshotJson as String?,
+          let data = json.data(using: .utf8),
           let object = try? JSONSerialization.jsonObject(with: data, options: []),
           let root = object as? [String: Any] else {
       return
@@ -411,17 +458,25 @@ class BodyMap3DView: UIView {
 
     let modeFromProp = (overlayMode as String?)?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
     let modeFromSnapshot = String(describing: root["overlayMode"] ?? "STIMULUS").uppercased()
-    cachedOverlayMode = (modeFromProp?.isEmpty == false ? modeFromProp! : modeFromSnapshot)
-
-    guard let regions = root["regions"] as? [[String: Any]] else {
-      return
+    if modeFromProp?.isEmpty == false {
+      cachedOverlayMode = modeFromProp!
+    } else {
+      cachedOverlayMode = modeFromSnapshot
     }
 
+    guard let regions = root["regions"] as? [[String: Any]] else { return }
+
     var nextScores: [Int: Double] = [:]
+    for region in regionDefinitions {
+      nextScores[region.id] = 0
+    }
+
     for row in regions {
       guard let id = row["id"] as? Int, id > 0, id < 256 else { continue }
       let key = (row["key"] as? String) ?? (regionKeys[id] ?? "")
-      regionKeys[id] = key
+      if !key.isEmpty {
+        regionKeys[id] = key
+      }
 
       var score: Double = 0
       if let scores = row["scores"] as? [String: Any] {
@@ -442,8 +497,6 @@ class BodyMap3DView: UIView {
   }
 
   private func applyColors() {
-    guard !usingUnity else { return }
-
     CATransaction.begin()
     CATransaction.setAnimationDuration(0.24)
 
@@ -451,9 +504,9 @@ class BodyMap3DView: UIView {
       let score = regionScores[id] ?? 0
       let normalized = max(0.0, min(1.0, score / 100.0))
       let color = colorForIntensity(normalized)
-      if let mat = node.geometry?.firstMaterial {
-        mat.diffuse.contents = color.withAlphaComponent(0.96)
-        mat.emission.contents = color.withAlphaComponent(0.24 + CGFloat(normalized) * 0.48)
+      if let material = node.geometry?.firstMaterial {
+        material.diffuse.contents = color.withAlphaComponent(0.94)
+        material.emission.contents = color.withAlphaComponent(0.16 + CGFloat(normalized) * 0.22)
       }
     }
 
@@ -461,8 +514,6 @@ class BodyMap3DView: UIView {
   }
 
   private func applySelection(animated: Bool) {
-    guard !usingUnity else { return }
-
     let selectedId = selectedRegionId?.intValue ?? 0
 
     CATransaction.begin()
@@ -475,14 +526,14 @@ class BodyMap3DView: UIView {
       let normalized = max(0.0, min(1.0, baseScore / 100.0))
       let baseColor = colorForIntensity(normalized)
 
-      node.scale = isSelected ? SCNVector3(1.08, 1.08, 1.08) : SCNVector3(1, 1, 1)
-      if let mat = node.geometry?.firstMaterial {
+      node.scale = isSelected ? SCNVector3(1.04, 1.04, 1.04) : SCNVector3(1, 1, 1)
+      if let material = node.geometry?.firstMaterial {
         if isSelected {
-          mat.emission.contents = UIColor.white.withAlphaComponent(0.85)
-          mat.diffuse.contents = blend(baseColor, UIColor.white, t: 0.2)
+          material.diffuse.contents = blend(baseColor, UIColor.white, t: 0.08)
+          material.emission.contents = baseColor.withAlphaComponent(0.52)
         } else {
-          mat.diffuse.contents = baseColor.withAlphaComponent(0.96)
-          mat.emission.contents = baseColor.withAlphaComponent(0.24 + CGFloat(normalized) * 0.48)
+          material.diffuse.contents = baseColor.withAlphaComponent(0.94)
+          material.emission.contents = baseColor.withAlphaComponent(0.16 + CGFloat(normalized) * 0.22)
         }
       }
     }
@@ -492,14 +543,13 @@ class BodyMap3DView: UIView {
 
   private func colorForIntensity(_ tIn: CGFloat) -> UIColor {
     let t = max(0, min(1, tIn))
-
-    let cool = UIColor(hex: "#64748B")
-    let trained = UIColor(hex: "#30D1FC")
-    let high = UIColor(hex: "#F14975")
-    let redline = UIColor(hex: "#FD9E33")
+    let low = UIColor(hex: "#4A5568")
+    let trained = UIColor(hex: "#22D3EE")
+    let high = UIColor(hex: "#F59E0B")
+    let redline = UIColor(hex: "#EF4444")
 
     if t < 0.33 {
-      return blend(cool, trained, t: t / 0.33)
+      return blend(low, trained, t: t / 0.33)
     }
     if t < 0.66 {
       return blend(trained, high, t: (t - 0.33) / 0.33)
@@ -529,154 +579,6 @@ class BodyMap3DView: UIView {
   }
 }
 
-private final class UnityBodyMapRuntime {
-  static let shared = UnityBodyMapRuntime()
-
-  private var didAttemptBoot = false
-  private var didBoot = false
-  private var unityFramework: NSObject?
-  private weak var cachedUnityView: UIView?
-
-  private init() {}
-
-  func attachEmbeddedView(to parent: UIView) -> UIView? {
-    guard bootIfPossible() else { return nil }
-    guard let unityView = resolveUnityRenderView() else { return nil }
-
-    if unityView.superview !== parent {
-      unityView.removeFromSuperview()
-      unityView.translatesAutoresizingMaskIntoConstraints = false
-      parent.addSubview(unityView)
-      NSLayoutConstraint.activate([
-        unityView.leadingAnchor.constraint(equalTo: parent.leadingAnchor),
-        unityView.trailingAnchor.constraint(equalTo: parent.trailingAnchor),
-        unityView.topAnchor.constraint(equalTo: parent.topAnchor),
-        unityView.bottomAnchor.constraint(equalTo: parent.bottomAnchor),
-      ])
-    }
-
-    cachedUnityView = unityView
-    return unityView
-  }
-
-  func sendMessage(method: String, message: String) {
-    guard bootIfPossible() else { return }
-    guard let ufw = unityFramework else { return }
-
-    let selector = NSSelectorFromString("sendMessageToGOWithName:functionName:message:")
-    guard ufw.responds(to: selector) else { return }
-
-    typealias SendMessageImp = @convention(c) (AnyObject, Selector, UnsafePointer<CChar>, UnsafePointer<CChar>, UnsafePointer<CChar>) -> Void
-    let imp = ufw.method(for: selector)
-    let call = unsafeBitCast(imp, to: SendMessageImp.self)
-
-    unityBridgeGameObject.withCString { gameObjectCString in
-      method.withCString { methodCString in
-        message.withCString { messageCString in
-          call(ufw, selector, gameObjectCString, methodCString, messageCString)
-        }
-      }
-    }
-  }
-
-  private func bootIfPossible() -> Bool {
-    if didBoot { return true }
-    if didAttemptBoot { return false }
-    didAttemptBoot = true
-
-    guard let frameworkBundle = unityFrameworkBundle() else { return false }
-    if !frameworkBundle.isLoaded {
-      frameworkBundle.load()
-    }
-
-    guard let unityClass = NSClassFromString("UnityFramework") else {
-      return false
-    }
-
-    guard let ufw = (unityClass as AnyObject).perform(NSSelectorFromString("getInstance"))?.takeUnretainedValue() as? NSObject else {
-      return false
-    }
-
-    configureDataBundleId(on: ufw)
-
-    if unityAppController(of: ufw) == nil {
-      setExecuteHeader(on: ufw)
-      runEmbedded(on: ufw)
-    }
-
-    if unityAppController(of: ufw) == nil {
-      return false
-    }
-
-    unityFramework = ufw
-    didBoot = true
-    return true
-  }
-
-  private func unityFrameworkBundle() -> Bundle? {
-    guard let frameworksPath = Bundle.main.privateFrameworksPath else { return nil }
-    let frameworkPath = (frameworksPath as NSString).appendingPathComponent("UnityFramework.framework")
-    guard FileManager.default.fileExists(atPath: frameworkPath) else { return nil }
-    return Bundle(path: frameworkPath)
-  }
-
-  private func unityAppController(of ufw: NSObject) -> NSObject? {
-    let selector = NSSelectorFromString("appController")
-    guard ufw.responds(to: selector) else { return nil }
-    return ufw.perform(selector)?.takeUnretainedValue() as? NSObject
-  }
-
-  private func resolveUnityRenderView() -> UIView? {
-    if let cached = cachedUnityView {
-      return cached
-    }
-
-    guard let ufw = unityFramework else { return nil }
-    guard let appController = unityAppController(of: ufw) else { return nil }
-
-    let rootVCSelector = NSSelectorFromString("rootViewController")
-    guard appController.responds(to: rootVCSelector),
-          let rootVC = appController.perform(rootVCSelector)?.takeUnretainedValue() as? UIViewController else {
-      return nil
-    }
-
-    return rootVC.view
-  }
-
-  private func configureDataBundleId(on ufw: NSObject) {
-    let selector = NSSelectorFromString("setDataBundleId:")
-    guard ufw.responds(to: selector) else { return }
-
-    typealias SetDataBundleImp = @convention(c) (AnyObject, Selector, UnsafePointer<CChar>) -> Void
-    let imp = ufw.method(for: selector)
-    let call = unsafeBitCast(imp, to: SetDataBundleImp.self)
-    "com.unity3d.framework".withCString { cString in
-      call(ufw, selector, cString)
-    }
-  }
-
-  private func setExecuteHeader(on ufw: NSObject) {
-    let selector = NSSelectorFromString("setExecuteHeader:")
-    guard ufw.responds(to: selector) else { return }
-
-    typealias SetHeaderImp = @convention(c) (AnyObject, Selector, UnsafeRawPointer) -> Void
-    let imp = ufw.method(for: selector)
-    let call = unsafeBitCast(imp, to: SetHeaderImp.self)
-    guard let header = _dyld_get_image_header(0) else { return }
-    call(ufw, selector, UnsafeRawPointer(header))
-  }
-
-  private func runEmbedded(on ufw: NSObject) {
-    let selector = NSSelectorFromString("runEmbeddedWithArgc:argv:appLaunchOpts:")
-    guard ufw.responds(to: selector) else { return }
-
-    typealias RunEmbeddedImp = @convention(c) (AnyObject, Selector, Int32, UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>?, NSDictionary?) -> Void
-    let imp = ufw.method(for: selector)
-    let call = unsafeBitCast(imp, to: RunEmbeddedImp.self)
-    call(ufw, selector, 0, nil, nil)
-  }
-}
-
 private extension UIColor {
   convenience init(hex: String) {
     let cleaned = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -691,7 +593,7 @@ private extension UIColor {
     case 6:
       (r, g, b) = (int >> 16, int >> 8 & 0xFF, int & 0xFF)
     default:
-      (r, g, b) = (0x64, 0x74, 0x8B)
+      (r, g, b) = (0x4A, 0x55, 0x68)
     }
     self.init(red: CGFloat(r) / 255, green: CGFloat(g) / 255, blue: CGFloat(b) / 255, alpha: 1)
   }

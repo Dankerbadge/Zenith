@@ -1,73 +1,143 @@
-import React, { useMemo, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
 import GlassCard from '../../../components/ui/GlassCard';
+import Screen from '../../../components/ui/Screen';
+import { NEON_THEME } from '../../../constants/neonTheme';
 import BodyMap3DNativeView, { type BodyMapRegionPressEvent } from '../../../components/bodymap/BodyMap3DNativeView';
+import {
+  BODY_MAP_LENSES,
+  BODY_MAP_TIMEFRAMES,
+  computeBodyMapSnapshot,
+  type BodyMapComputedSnapshot,
+  type BodyMapLens,
+  type BodyMapRegionSnapshot,
+  type BodyMapTimeframe,
+} from '../../../utils/bodyMapProgress';
 
-type BodyMapRegion = {
-  id: number;
-  key: string;
-  scores: {
-    stimulus: number;
-    soreness: number;
-    pain: number;
-    fatigue: number;
-    composite: number;
-  };
-};
+const CAMERA_PRESETS = ['FRONT', 'BACK'] as const;
+type CameraPreset = (typeof CAMERA_PRESETS)[number];
 
-const REGION_DEMO_DATA: BodyMapRegion[] = [
-  { id: 1, key: 'CHEST_L', scores: { stimulus: 62, soreness: 28, pain: 8, fatigue: 41, composite: 44 } },
-  { id: 2, key: 'CHEST_R', scores: { stimulus: 66, soreness: 31, pain: 9, fatigue: 43, composite: 47 } },
-  { id: 3, key: 'DELTS_FRONT_L', scores: { stimulus: 73, soreness: 35, pain: 12, fatigue: 57, composite: 56 } },
-  { id: 4, key: 'DELTS_FRONT_R', scores: { stimulus: 70, soreness: 33, pain: 10, fatigue: 54, composite: 54 } },
-  { id: 9, key: 'BICEPS_L', scores: { stimulus: 58, soreness: 27, pain: 9, fatigue: 37, composite: 41 } },
-  { id: 10, key: 'BICEPS_R', scores: { stimulus: 60, soreness: 26, pain: 8, fatigue: 39, composite: 41 } },
-  { id: 15, key: 'UPPER_BACK_L', scores: { stimulus: 64, soreness: 32, pain: 10, fatigue: 46, composite: 47 } },
-  { id: 16, key: 'UPPER_BACK_R', scores: { stimulus: 67, soreness: 34, pain: 10, fatigue: 48, composite: 49 } },
-  { id: 21, key: 'ABS', scores: { stimulus: 51, soreness: 20, pain: 6, fatigue: 30, composite: 34 } },
-  { id: 24, key: 'LOWER_BACK', scores: { stimulus: 43, soreness: 36, pain: 14, fatigue: 33, composite: 38 } },
-  { id: 31, key: 'QUADS_L', scores: { stimulus: 69, soreness: 39, pain: 13, fatigue: 55, composite: 55 } },
-  { id: 32, key: 'QUADS_R', scores: { stimulus: 68, soreness: 37, pain: 12, fatigue: 54, composite: 54 } },
-  { id: 35, key: 'CALVES_L', scores: { stimulus: 52, soreness: 22, pain: 7, fatigue: 31, composite: 35 } },
-  { id: 36, key: 'CALVES_R', scores: { stimulus: 53, soreness: 23, pain: 7, fatigue: 32, composite: 36 } },
-];
+function scoreForLens(region: BodyMapRegionSnapshot, lens: BodyMapLens): number {
+  if (lens === 'SORENESS') return region.scores.soreness;
+  if (lens === 'PAIN') return region.scores.pain;
+  if (lens === 'FATIGUE') return region.scores.fatigue;
+  if (lens === 'COMPOSITE') return region.scores.composite;
+  return region.scores.stimulus;
+}
 
-const LENSES = ['STIMULUS', 'SORENESS', 'PAIN', 'FATIGUE', 'COMPOSITE'] as const;
-type OverlayLens = (typeof LENSES)[number];
+function shortDate(dateKey: string): string {
+  const [yearRaw, monthRaw, dayRaw] = String(dateKey).split('-');
+  const year = Number(yearRaw);
+  const month = Number(monthRaw);
+  const day = Number(dayRaw);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return dateKey;
+  return `${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
+}
 
 export default function BodyMap3DProgressScreen() {
-  const [overlayMode, setOverlayMode] = useState<OverlayLens>('STIMULUS');
+  const [timeframe, setTimeframe] = useState<BodyMapTimeframe>('SESSION');
+  const [overlayMode, setOverlayMode] = useState<BodyMapLens>('STIMULUS');
+  const [cameraPreset, setCameraPreset] = useState<CameraPreset>('FRONT');
+  const [historyVisible, setHistoryVisible] = useState(false);
   const [selectedRegionId, setSelectedRegionId] = useState<number>(0);
+  const [snapshot, setSnapshot] = useState<BodyMapComputedSnapshot | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const next = await computeBodyMapSnapshot(timeframe);
+      setSnapshot(next);
+      setSelectedRegionId((prev) => (next.regions.some((region) => region.id === prev) ? prev : 0));
+    } catch (err: any) {
+      setSnapshot(null);
+      setError(String(err?.message || err || 'Failed to compute body-map snapshot.'));
+    } finally {
+      setLoading(false);
+    }
+  }, [timeframe]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   const snapshotJson = useMemo(
     () =>
       JSON.stringify({
+        timeframe,
         overlayMode,
-        regions: REGION_DEMO_DATA.map((row) => ({ id: row.id, key: row.key, scores: row.scores })),
+        regions: (snapshot?.regions || []).map((row) => ({ id: row.id, key: row.key, scores: row.scores })),
       }),
-    [overlayMode]
+    [overlayMode, snapshot, timeframe]
   );
 
-  const selectedRegion = useMemo(() => REGION_DEMO_DATA.find((row) => row.id === selectedRegionId), [selectedRegionId]);
+  const stimulusLensJson = useMemo(() => JSON.stringify(snapshot?.lensSummaries || {}), [snapshot]);
+
+  const regionPanelsJson = useMemo(
+    () =>
+      JSON.stringify(
+        (snapshot?.regions || []).map((region) => ({
+          id: region.id,
+          key: region.key,
+          label: region.label,
+          scores: region.scores,
+        }))
+      ),
+    [snapshot]
+  );
+
+  const selectedRegion = useMemo(
+    () => snapshot?.regions.find((row) => row.id === selectedRegionId) || null,
+    [selectedRegionId, snapshot]
+  );
+
+  const selectedHistory = useMemo(() => {
+    if (!selectedRegion || !snapshot) return [];
+    return snapshot.historyByRegionId[selectedRegion.id] || [];
+  }, [selectedRegion, snapshot]);
+
+  const topRegions = useMemo(() => {
+    const summary = snapshot?.lensSummaries?.[overlayMode];
+    return summary?.topRegions || [];
+  }, [overlayMode, snapshot]);
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <Screen edges={['top']} aura>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()}>
             <Text style={styles.back}>Back</Text>
           </Pressable>
           <Text style={styles.title}>3D Body Map</Text>
-          <View style={{ width: 40 }} />
+          <Pressable onPress={() => setHistoryVisible((prev) => !prev)}>
+            <Text style={styles.historyToggle}>{historyVisible ? 'Hide History' : 'History'}</Text>
+          </Pressable>
         </View>
 
         <GlassCard>
-          <Text style={styles.cardTitle}>Overlay Lens</Text>
+          <Text style={styles.cardTitle}>Timeframe</Text>
           <View style={styles.pillRow}>
-            {LENSES.map((lens) => (
+            {BODY_MAP_TIMEFRAMES.map((value) => (
+              <Pressable
+                key={value}
+                style={[styles.pill, timeframe === value && styles.pillActive]}
+                onPress={() => setTimeframe(value)}
+              >
+                <Text style={[styles.pillText, timeframe === value && styles.pillTextActive]}>{value}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={styles.meta}>Controls the log window used to compute all body-map scores.</Text>
+        </GlassCard>
+
+        <GlassCard>
+          <Text style={styles.cardTitle}>Lens + View</Text>
+          <View style={styles.pillRow}>
+            {BODY_MAP_LENSES.map((lens) => (
               <Pressable
                 key={lens}
                 style={[styles.pill, overlayMode === lens && styles.pillActive]}
@@ -77,15 +147,43 @@ export default function BodyMap3DProgressScreen() {
               </Pressable>
             ))}
           </View>
-          <Text style={styles.meta}>Tap a region to inspect its score details for the selected lens.</Text>
+          <View style={styles.pillRow}>
+            {CAMERA_PRESETS.map((preset) => (
+              <Pressable
+                key={preset}
+                style={[styles.pill, cameraPreset === preset && styles.pillActive]}
+                onPress={() => setCameraPreset(preset)}
+              >
+                <Text style={[styles.pillText, cameraPreset === preset && styles.pillTextActive]}>{preset}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={styles.meta}>Tap a region to inspect details for the selected lens.</Text>
         </GlassCard>
 
         <GlassCard style={styles.mapCard}>
-          {Platform.OS === 'ios' ? (
+          {loading ? (
+            <View style={[styles.map, styles.mapFallback]}>
+              <ActivityIndicator color={NEON_THEME.color.neonCyan} />
+              <Text style={styles.meta}>Computing snapshot…</Text>
+            </View>
+          ) : error ? (
+            <View style={[styles.map, styles.mapFallback]}>
+              <Text style={styles.fallbackTitle}>Couldn’t compute body map</Text>
+              <Text style={styles.fallbackBody}>{error}</Text>
+              <Pressable style={[styles.pill, styles.retryPill]} onPress={() => void refresh()}>
+                <Text style={[styles.pillText, styles.pillTextActive]}>Retry</Text>
+              </Pressable>
+            </View>
+          ) : Platform.OS === 'ios' ? (
             <BodyMap3DNativeView
               style={styles.map}
               overlayMode={overlayMode}
+              activeLens={overlayMode}
+              cameraPreset={cameraPreset}
               snapshotJson={snapshotJson}
+              stimulusLensJson={stimulusLensJson}
+              regionPanelsJson={regionPanelsJson}
               selectedRegionId={selectedRegionId}
               onRegionPress={(event) => {
                 const payload = event?.nativeEvent as BodyMapRegionPressEvent | undefined;
@@ -104,34 +202,73 @@ export default function BodyMap3DProgressScreen() {
           <Text style={styles.cardTitle}>Selection</Text>
           {selectedRegion ? (
             <>
-              <Text style={styles.regionName}>{selectedRegion.key}</Text>
+              <Text style={styles.regionName}>{selectedRegion.label}</Text>
+              <Text style={styles.meta}>{selectedRegion.key}</Text>
               <Text style={styles.meta}>Region ID {selectedRegion.id}</Text>
-              <Text style={styles.scoreLine}>
-                {overlayMode}: {selectedRegion.scores[overlayMode.toLowerCase() as keyof BodyMapRegion['scores']]}
-              </Text>
+              <View style={styles.scoreGrid}>
+                <Text style={[styles.scoreLine, overlayMode === 'STIMULUS' && styles.scoreLineActive]}>Stimulus {selectedRegion.scores.stimulus}</Text>
+                <Text style={[styles.scoreLine, overlayMode === 'SORENESS' && styles.scoreLineActive]}>Soreness {selectedRegion.scores.soreness}</Text>
+                <Text style={[styles.scoreLine, overlayMode === 'PAIN' && styles.scoreLineActive]}>Pain {selectedRegion.scores.pain}</Text>
+                <Text style={[styles.scoreLine, overlayMode === 'FATIGUE' && styles.scoreLineActive]}>Fatigue {selectedRegion.scores.fatigue}</Text>
+                <Text style={[styles.scoreLine, overlayMode === 'COMPOSITE' && styles.scoreLineActive]}>Composite {selectedRegion.scores.composite}</Text>
+              </View>
             </>
           ) : (
             <Text style={styles.meta}>No region selected yet.</Text>
           )}
         </GlassCard>
+
+        <GlassCard>
+          <Text style={styles.cardTitle}>{overlayMode} Hotspots</Text>
+          {topRegions.length ? (
+            topRegions.map((region) => (
+              <View key={region.id} style={styles.row}>
+                <Text style={styles.rowLabel}>{region.label}</Text>
+                <Text style={styles.rowValue}>{region.score}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.meta}>No regional load data yet.</Text>
+          )}
+        </GlassCard>
+
+        {historyVisible ? (
+          <GlassCard>
+            <Text style={styles.cardTitle}>History</Text>
+            {selectedRegion ? (
+              selectedHistory.length ? (
+                selectedHistory.map((point) => (
+                  <View key={`${selectedRegion.id}:${point.date}`} style={styles.row}>
+                    <Text style={styles.rowLabel}>{shortDate(point.date)}</Text>
+                    <Text style={styles.rowValue}>{scoreForLens({ ...selectedRegion, scores: point.scores }, overlayMode)}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.meta}>No history rows for this region yet.</Text>
+              )
+            ) : (
+              <Text style={styles.meta}>Select a region to view history.</Text>
+            )}
+          </GlassCard>
+        ) : null}
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#090909' },
   content: { padding: 16, paddingBottom: 40, gap: 12 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  back: { color: '#7EDCFF', fontWeight: '900' },
-  title: { color: '#FFF', fontWeight: '900', fontSize: 20 },
-  cardTitle: { color: '#EAF8FD', fontWeight: '900', fontSize: 14 },
-  meta: { color: '#A9C4CF', fontWeight: '700', marginTop: 10, lineHeight: 18 },
+  back: { color: NEON_THEME.color.neonCyan, fontWeight: '900' },
+  title: { color: NEON_THEME.color.textPrimary, fontWeight: '900', fontSize: 20 },
+  historyToggle: { color: NEON_THEME.color.textSecondary, fontWeight: '800' },
+  cardTitle: { color: NEON_THEME.color.textPrimary, fontWeight: '900', fontSize: 14 },
+  meta: { color: NEON_THEME.color.textSecondary, fontWeight: '700', marginTop: 10, lineHeight: 18 },
   mapCard: { padding: 8 },
   map: { width: '100%', height: 420, borderRadius: 14, overflow: 'hidden' },
   mapFallback: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#101723' },
-  fallbackTitle: { color: '#DCEBFF', fontWeight: '900', fontSize: 16 },
-  fallbackBody: { color: '#A9C4CF', marginTop: 6, fontWeight: '700' },
+  fallbackTitle: { color: '#DCEBFF', fontWeight: '900', fontSize: 16, textAlign: 'center' },
+  fallbackBody: { color: '#A9C4CF', marginTop: 6, fontWeight: '700', textAlign: 'center' },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   pill: {
     paddingHorizontal: 10,
@@ -142,8 +279,14 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.12)',
   },
   pillActive: { backgroundColor: 'rgba(0,217,255,0.2)', borderColor: 'rgba(0,217,255,0.8)' },
-  pillText: { color: '#A9C4CF', fontWeight: '800', fontSize: 12 },
+  retryPill: { marginTop: 12 },
+  pillText: { color: NEON_THEME.color.textSecondary, fontWeight: '800', fontSize: 12 },
   pillTextActive: { color: '#DFF8FF' },
-  regionName: { color: '#FFF', fontWeight: '900', fontSize: 16, marginTop: 10 },
-  scoreLine: { color: '#DFF8FF', fontWeight: '800', marginTop: 6, fontSize: 13 },
+  regionName: { color: NEON_THEME.color.textPrimary, fontWeight: '900', fontSize: 16, marginTop: 10 },
+  scoreGrid: { marginTop: 8, gap: 6 },
+  scoreLine: { color: '#DFF8FF', fontWeight: '700', fontSize: 13 },
+  scoreLineActive: { color: NEON_THEME.color.neonCyan, fontWeight: '900' },
+  row: { marginTop: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  rowLabel: { color: '#DFF4FF', fontWeight: '700', flex: 1 },
+  rowValue: { color: '#98ECFF', fontWeight: '900' },
 });

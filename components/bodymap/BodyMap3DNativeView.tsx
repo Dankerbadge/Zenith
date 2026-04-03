@@ -14,6 +14,7 @@ type BodyMap3DNativeViewProps = {
   regionPanelsJson?: string;
   activeLens?: string;
   overlayMode?: string;
+  cameraPreset?: string;
   selectedRegionId?: number;
   onRegionPress?: (event: NativeSyntheticEvent<BodyMapRegionPressEvent>) => void;
 };

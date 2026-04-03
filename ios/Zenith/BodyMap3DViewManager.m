@@ -7,6 +7,7 @@ RCT_EXPORT_VIEW_PROPERTY(stimulusLensJson, NSString)
 RCT_EXPORT_VIEW_PROPERTY(regionPanelsJson, NSString)
 RCT_EXPORT_VIEW_PROPERTY(activeLens, NSString)
 RCT_EXPORT_VIEW_PROPERTY(overlayMode, NSString)
+RCT_EXPORT_VIEW_PROPERTY(cameraPreset, NSString)
 RCT_EXPORT_VIEW_PROPERTY(selectedRegionId, NSNumber)
 RCT_EXPORT_VIEW_PROPERTY(onRegionPress, RCTBubblingEventBlock)
 
