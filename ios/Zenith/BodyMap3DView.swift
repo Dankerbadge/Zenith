@@ -112,10 +112,13 @@ class BodyMap3DView: UIView {
   private var cameraDistance: Float = 3.35
   private var minCameraDistance: Float = 2.1
   private var maxCameraDistance: Float = 5.4
-  private var frontBackOrthographicScale: Double = 2.4
-  private var frontBackVerticalOffset: Float = 0.05
+  private var frontBackOrthographicScale: Double = 1.15
+  private var frontBackCameraDistance: Float = 3.1
   private var activeGestureCount = 0
   private var rendererMode: String = "unknown"
+
+  private let defaultOrbitYaw: Float = 0.72
+  private let defaultOrbitPitch: Float = 0.10
 
   override init(frame: CGRect) {
     super.init(frame: frame)
@@ -273,14 +276,62 @@ class BodyMap3DView: UIView {
       }
       camera.usesOrthographicProjection = true
       camera.orthographicScale = frontBackOrthographicScale
-      let y = focus.y + frontBackVerticalOffset
-      let z = preset == "BACK" ? (focus.z - cameraDistance) : (focus.z + cameraDistance)
-      moveCamera(to: SCNVector3(focus.x, y, z), animated: animated)
+      let z = preset == "BACK" ? (focus.z - frontBackCameraDistance) : (focus.z + frontBackCameraDistance)
+      moveCamera(to: SCNVector3(focus.x, focus.y, z), animated: animated)
       return
     }
     camera.usesOrthographicProjection = false
     camera.fieldOfView = 36
     updateOrbitCamera(animated: animated)
+  }
+
+  private func localGeometryBounds(of root: SCNNode) -> (min: SCNVector3, max: SCNVector3)? {
+    var found = false
+    var minV = SCNVector3(Float.greatestFiniteMagnitude, Float.greatestFiniteMagnitude, Float.greatestFiniteMagnitude)
+    var maxV = SCNVector3(-Float.greatestFiniteMagnitude, -Float.greatestFiniteMagnitude, -Float.greatestFiniteMagnitude)
+
+    func absorb(_ point: SCNVector3) {
+      minV.x = min(minV.x, point.x)
+      minV.y = min(minV.y, point.y)
+      minV.z = min(minV.z, point.z)
+      maxV.x = max(maxV.x, point.x)
+      maxV.y = max(maxV.y, point.y)
+      maxV.z = max(maxV.z, point.z)
+    }
+
+    walkNodes(root) { node in
+      guard node.geometry != nil else { return }
+      let (bmin, bmax) = node.boundingBox
+      let corners = [
+        SCNVector3(bmin.x, bmin.y, bmin.z), SCNVector3(bmin.x, bmin.y, bmax.z),
+        SCNVector3(bmin.x, bmax.y, bmin.z), SCNVector3(bmin.x, bmax.y, bmax.z),
+        SCNVector3(bmax.x, bmin.y, bmin.z), SCNVector3(bmax.x, bmin.y, bmax.z),
+        SCNVector3(bmax.x, bmax.y, bmin.z), SCNVector3(bmax.x, bmax.y, bmax.z),
+      ]
+      for corner in corners {
+        absorb(root.convertPosition(corner, from: node))
+        found = true
+      }
+    }
+
+    return found ? (minV, maxV) : nil
+  }
+
+  private func normalizeModelOrientation(_ modelRoot: SCNNode) {
+    guard let initial = localGeometryBounds(of: modelRoot) else { return }
+    let initialSize = SCNVector3(initial.max.x - initial.min.x, initial.max.y - initial.min.y, initial.max.z - initial.min.z)
+
+    if initialSize.z > max(initialSize.x, initialSize.y) * 1.10 {
+      modelRoot.eulerAngles.x -= .pi / 2
+    } else if initialSize.x > max(initialSize.y, initialSize.z) * 1.10 {
+      modelRoot.eulerAngles.z += .pi / 2
+    }
+
+    guard let upright = localGeometryBounds(of: modelRoot) else { return }
+    let uprightSize = SCNVector3(upright.max.x - upright.min.x, upright.max.y - upright.min.y, upright.max.z - upright.min.z)
+    if uprightSize.z > uprightSize.x * 1.10 {
+      modelRoot.eulerAngles.y += .pi / 2
+    }
   }
 
   private func shouldUsePrimitiveFallback() -> Bool {
@@ -399,10 +450,15 @@ class BodyMap3DView: UIView {
   }
 
   private func fitLoadedModel(_ modelRoot: SCNNode) {
-    let (minB, maxB) = modelRoot.boundingBox
-    let width = maxB.x - minB.x
-    let height = maxB.y - minB.y
-    let depth = maxB.z - minB.z
+    normalizeModelOrientation(modelRoot)
+    guard let rawBounds = localGeometryBounds(of: modelRoot) else {
+      applyCameraPreset(animated: false)
+      return
+    }
+
+    let width = rawBounds.max.x - rawBounds.min.x
+    let height = rawBounds.max.y - rawBounds.min.y
+    let depth = rawBounds.max.z - rawBounds.min.z
 
     guard width > 0.0001, height > 0.0001, depth > 0.0001 else {
       applyCameraPreset(animated: false)
@@ -410,21 +466,34 @@ class BodyMap3DView: UIView {
     }
 
     let center = SCNVector3(
-      (minB.x + maxB.x) * 0.5,
-      (minB.y + maxB.y) * 0.5,
-      (minB.z + maxB.z) * 0.5
+      (rawBounds.min.x + rawBounds.max.x) * 0.5,
+      (rawBounds.min.y + rawBounds.max.y) * 0.5,
+      (rawBounds.min.z + rawBounds.max.z) * 0.5
     )
-    modelRoot.pivot = SCNMatrix4MakeTranslation(center.x, center.y, center.z)
 
-    let radius = max(width, max(height, depth)) * 0.5
-    cameraDistance = max(2.95, radius * 3.35)
+    // Use translation instead of pivot so the focus point and bounds stay stable.
+    modelRoot.pivot = SCNMatrix4Identity
+    modelRoot.position = SCNVector3(-center.x, -center.y, -center.z)
+
+    guard let centeredBounds = localGeometryBounds(of: modelRoot) else {
+      applyCameraPreset(animated: false)
+      return
+    }
+
+    let centeredWidth = centeredBounds.max.x - centeredBounds.min.x
+    let centeredHeight = centeredBounds.max.y - centeredBounds.min.y
+    let centeredDepth = centeredBounds.max.z - centeredBounds.min.z
+
+    let radius = max(centeredWidth, max(centeredHeight, centeredDepth)) * 0.5
+    cameraDistance = max(2.35, radius * 2.45)
     minCameraDistance = max(1.8, radius * 1.8)
     maxCameraDistance = max(4.2, radius * 5.0)
-    frontBackOrthographicScale = Double(max(2.0, height * 1.16))
-    frontBackVerticalOffset = max(0.05, height * 0.04)
-    focusNode.position = SCNVector3(0, max(0.03, height * 0.02), 0)
-    orbitYaw = 0
-    orbitPitch = -0.08
+    frontBackCameraDistance = max(2.6, centeredDepth * 4.0 + 0.9)
+    // orthographicScale is effectively half-height in SceneKit; use half-height + margin, not full height.
+    frontBackOrthographicScale = Double(max(0.85, centeredHeight * 0.60))
+    focusNode.position = SCNVector3(0, max(0.06, centeredHeight * 0.08), 0)
+    orbitYaw = defaultOrbitYaw
+    orbitPitch = defaultOrbitPitch
     cameraNode.camera?.fieldOfView = 36
     cameraNode.camera?.automaticallyAdjustsZRange = true
     applyCameraPreset(animated: false)
