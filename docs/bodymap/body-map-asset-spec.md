@@ -133,7 +133,7 @@ The app now uses split optics by preset and the asset must be authored to match:
 4. Keep pivot centered near pelvis for stable framing.
 5. Remove hidden helpers, duplicate shells, and non-render meshes from export.
 6. Ensure normals are clean and consistent (no inside-out panels).
-7. Do not bake glow/emission into textures.
+7. No baked glow or baked emission textures.
 8. Validate no shell self-intersections against base mesh in bind pose.
 9. Export in one of the accepted runtime formats: `*.scn` (preferred) or `*.usdz`.
 10. Confirm Xcode target resource wiring after replacing the file.
