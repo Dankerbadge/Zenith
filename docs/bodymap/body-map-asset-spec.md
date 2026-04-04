@@ -149,14 +149,29 @@ The app now uses split optics by preset and the asset must be authored to match:
 8. Overlay intensity does not wash out base silhouette.
 9. If asset missing and fallback is enabled, primitive renderer still functions as non-blocking safety.
 
+## Review Scoring Order (Required)
+Score every mesh iteration in this order. Earlier failures block later scoring.
+
+1. Base-only silhouette:
+   if the dark base body still reads toy-like or cylindrical, fail immediately.
+2. FRONT/BACK readability:
+   torso taper must read instantly, delts must not dominate width, and hands/feet must not pull attention.
+3. Side-profile anatomy:
+   evaluate chest-to-waist taper, clavicle/neck transition, glute shelf, and knee/ankle breaks.
+4. Shell discipline:
+   verify thin plates, wider gutters, reduced limb wrap, and visible dark base at joints/extremities.
+5. Selected-region behavior:
+   selection must highlight cleanly without adding puffiness or armor-like form.
+
 ## Screenshot Acceptance Pack (Required Every Mesh Iteration)
 Provide all screenshots from the same build stamp and same asset revision.
 
 1. `FRONT` unselected, full overlay tint active.
 2. `BACK` unselected, full overlay tint active.
 3. `ORBIT` 3/4 angle, unselected, full overlay tint active.
-4. Neutral base-body check with overlays visually minimized.
-5. Selected-region check (one torso region, one limb region).
+4. Strict 90° side-profile capture, unselected, full overlay tint active.
+5. Neutral base-body check with overlays visually minimized.
+6. Selected-region check (one torso region, one limb region).
 
 ### Automatic Fail Conditions
 1. Torso reads cylindrical/barrel-like in FRONT or BACK.
@@ -164,7 +179,8 @@ Provide all screenshots from the same build stamp and same asset revision.
 3. Hands/feet attract attention before torso.
 4. Overlays visually merge into a full-body suit.
 5. Dark base-body silhouette is not readable in FRONT/BACK.
-6. FRONT/BACK diverge materially from intended 2D map look.
+6. Side profile reads as stacked tubes instead of anatomy.
+7. FRONT/BACK diverge materially from intended 2D map look.
 
 ## Patch List (Code Integration)
 1. Add the asset to iOS project resources (`ios/Zenith.xcodeproj/project.pbxproj`).
