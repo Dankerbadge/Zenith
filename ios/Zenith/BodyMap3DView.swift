@@ -690,7 +690,8 @@ class BodyMap3DView: UIView {
       let normalized = max(0.0, min(1.0, baseScore / 100.0))
       let baseColor = colorForIntensity(normalized)
 
-      node.scale = isSelected ? SCNVector3(1.04, 1.04, 1.04) : SCNVector3(1, 1, 1)
+      // Keep selection purely visual; scaling shells makes anatomy read like armor.
+      node.scale = SCNVector3(1, 1, 1)
       applyRegionTint(to: node, color: baseColor, normalized: normalized, selected: isSelected)
     }
 
@@ -703,20 +704,28 @@ class BodyMap3DView: UIView {
       geometry.materials = [regionMaterial()]
     }
 
+    let clamped = max(0, min(1, normalized))
+    let neutralPlate = UIColor(hex: "#1A222D")
+    let highlightColor = selected ? blend(color, UIColor.white, t: 0.10) : color
     let tintStrength = selected
-      ? (0.22 + normalized * 0.16)
-      : (0.10 + normalized * 0.14)
-    let tintColor = blend(UIColor.white, color, t: tintStrength)
+      ? (0.22 + clamped * 0.70)
+      : (0.06 + clamped * 0.74)
+    let tintColor = blend(neutralPlate, highlightColor, t: tintStrength)
+    let shellAlpha = selected
+      ? (0.18 + clamped * 0.70)
+      : (0.06 + clamped * 0.68)
     let emissionAlpha = selected
-      ? (0.04 + normalized * 0.06)
-      : (0.01 + normalized * 0.03)
+      ? (0.03 + clamped * 0.08)
+      : (0.00 + clamped * 0.02)
 
     for material in geometry.materials {
       material.lightingModel = .physicallyBased
       material.multiply.contents = tintColor
-      material.emission.contents = color.withAlphaComponent(emissionAlpha)
+      material.transparency = shellAlpha
+      material.transparencyMode = .aOne
+      material.emission.contents = highlightColor.withAlphaComponent(emissionAlpha)
       if rendererMode == "primitive" {
-        material.diffuse.contents = color.withAlphaComponent(selected ? 0.92 : 0.84)
+        material.diffuse.contents = highlightColor.withAlphaComponent(shellAlpha)
       }
     }
   }
