@@ -406,61 +406,91 @@ class BodyMap3DView: UIView {
 
   private func normalizeModelOrientation(_ modelRoot: SCNNode) {
     let base = modelRoot.eulerAngles
-    let uprightCandidates: [SCNVector3] = [
-      base,
-      SCNVector3(base.x + (.pi / 2), base.y, base.z),
-      SCNVector3(base.x - (.pi / 2), base.y, base.z),
-      SCNVector3(base.x, base.y, base.z + (.pi / 2)),
-      SCNVector3(base.x, base.y, base.z - (.pi / 2)),
-    ]
+    let quarterTurn = Float.pi / 2
+    let axisTurns: [Float] = [0, quarterTurn, .pi, -quarterTurn]
 
-    var bestUpright = base
+    func orientationScore() -> Float? {
+      guard let top = averageCenter(for: ["NECK", "TRAPS_L", "TRAPS_R", "CHEST_L", "CHEST_R"], in: modelRoot),
+            let bottom = averageCenter(for: ["CALVES_L", "CALVES_R", "TIBIALIS_L", "TIBIALIS_R", "HAMSTRINGS_L", "HAMSTRINGS_R", "QUADS_L", "QUADS_R"], in: modelRoot),
+            let front = averageCenter(for: ["CHEST_L", "CHEST_R", "ABS", "HIP_FLEXORS_L", "HIP_FLEXORS_R", "QUADS_L", "QUADS_R", "TIBIALIS_L", "TIBIALIS_R"], in: modelRoot),
+            let back = averageCenter(for: ["UPPER_BACK_L", "UPPER_BACK_R", "LOWER_BACK", "GLUTES_L", "GLUTES_R", "HAMSTRINGS_L", "HAMSTRINGS_R", "CALVES_L", "CALVES_R"], in: modelRoot),
+            let left = averageCenter(for: ["CHEST_L", "DELTS_FRONT_L", "DELTS_SIDE_L", "DELTS_REAR_L", "BICEPS_L", "TRICEPS_L", "FOREARMS_L", "LATS_L", "TRAPS_L", "OBLIQUES_L", "GLUTES_L", "HIP_FLEXORS_L", "ADDUCTORS_L", "QUADS_L", "HAMSTRINGS_L", "CALVES_L", "TIBIALIS_L"], in: modelRoot),
+            let right = averageCenter(for: ["CHEST_R", "DELTS_FRONT_R", "DELTS_SIDE_R", "DELTS_REAR_R", "BICEPS_R", "TRICEPS_R", "FOREARMS_R", "LATS_R", "TRAPS_R", "OBLIQUES_R", "GLUTES_R", "HIP_FLEXORS_R", "ADDUCTORS_R", "QUADS_R", "HAMSTRINGS_R", "CALVES_R", "TIBIALIS_R"], in: modelRoot) else {
+        return nil
+      }
+
+      let upDelta = top.y - bottom.y
+      let frontDelta = front.z - back.z
+      let rightDelta = right.x - left.x
+
+      let upLeak = abs(top.x - bottom.x) + abs(top.z - bottom.z)
+      let frontLeak = abs(front.x - back.x) + abs(front.y - back.y)
+      let rightLeak = abs(right.y - left.y) + abs(right.z - left.z)
+
+      let upSpan = abs(top.y - bottom.y)
+      let frontSpan = abs(front.z - back.z)
+      let rightSpan = abs(right.x - left.x)
+
+      return (upDelta * 6.0) + (frontDelta * 6.0) + (rightDelta * 5.0) +
+        (upSpan * 2.0) + (frontSpan * 2.0) + rightSpan -
+        (upLeak * 3.0) - (frontLeak * 3.0) - (rightLeak * 2.0)
+    }
+
+    var bestOrientation = base
     var bestScore: Float = -.greatestFiniteMagnitude
 
-    for candidate in uprightCandidates {
-      modelRoot.eulerAngles = candidate
-      guard let bounds = localGeometryBounds(of: modelRoot) else { continue }
-      let size = SCNVector3(bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y, bounds.max.z - bounds.min.z)
-      let horizontalSpan = max(size.x, size.z)
-      guard horizontalSpan > 0.0001 else { continue }
-      let score = size.y + ((size.y / horizontalSpan) * 12.0)
-      if score > bestScore {
-        bestScore = score
-        bestUpright = candidate
+    for xTurn in axisTurns {
+      for yTurn in axisTurns {
+        for zTurn in axisTurns {
+          let candidate = SCNVector3(base.x + xTurn, base.y + yTurn, base.z + zTurn)
+          modelRoot.eulerAngles = candidate
+
+          let score: Float
+          if let anatomyScore = orientationScore() {
+            score = anatomyScore
+          } else if let bounds = localGeometryBounds(of: modelRoot) {
+            let size = SCNVector3(bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y, bounds.max.z - bounds.min.z)
+            let horizontalSpan = max(size.x, size.z)
+            guard horizontalSpan > 0.0001 else { continue }
+            score = size.y + ((size.y / horizontalSpan) * 12.0)
+          } else {
+            continue
+          }
+
+          if score > bestScore {
+            bestScore = score
+            bestOrientation = candidate
+          }
+        }
       }
     }
 
-    modelRoot.eulerAngles = bestUpright
+    modelRoot.eulerAngles = bestOrientation
 
+    if let top = averageCenter(for: ["NECK", "TRAPS_L", "TRAPS_R"], in: modelRoot),
+       let bottom = averageCenter(for: ["CALVES_L", "CALVES_R", "TIBIALIS_L", "TIBIALIS_R"], in: modelRoot),
+       top.y < bottom.y {
+      modelRoot.eulerAngles.x += .pi
+    }
+
+    var yFlipVotes = 0
     if let front = averageCenter(for: ["CHEST_L", "CHEST_R", "ABS"], in: modelRoot),
-       let back = averageCenter(for: ["UPPER_BACK_L", "UPPER_BACK_R", "LOWER_BACK"], in: modelRoot) {
-      let dx = front.x - back.x
-      let dz = front.z - back.z
-      let forwardLen = hypotf(dx, dz)
-      if forwardLen > 0.0001 {
-        modelRoot.eulerAngles.y += -atan2(dx, dz)
-      }
+       let back = averageCenter(for: ["UPPER_BACK_L", "UPPER_BACK_R", "LOWER_BACK"], in: modelRoot),
+       front.z < back.z {
+      yFlipVotes += 1
     }
-
-    let mirrorPairs: [(String, String)] = [
-      ("CHEST_L", "CHEST_R"),
-      ("DELTS_FRONT_L", "DELTS_FRONT_R"),
-      ("QUADS_L", "QUADS_R"),
-      ("CALVES_L", "CALVES_R"),
-    ]
-    var handednessScore: Float = 0
-    for (leftKey, rightKey) in mirrorPairs {
-      if let left = regionCenter(for: leftKey, in: modelRoot),
-         let right = regionCenter(for: rightKey, in: modelRoot) {
-        handednessScore += left.x < right.x ? 1.0 : -1.0
-      }
+    if let left = averageCenter(for: ["CHEST_L", "DELTS_FRONT_L", "QUADS_L"], in: modelRoot),
+       let right = averageCenter(for: ["CHEST_R", "DELTS_FRONT_R", "QUADS_R"], in: modelRoot),
+       right.x < left.x {
+      yFlipVotes += 1
     }
-    if handednessScore < 0 {
+    if yFlipVotes > 0 {
       modelRoot.eulerAngles.y += .pi
     }
 
-    let quarterTurn = Float.pi / 2
+    modelRoot.eulerAngles.x = round(modelRoot.eulerAngles.x / quarterTurn) * quarterTurn
     modelRoot.eulerAngles.y = round(modelRoot.eulerAngles.y / quarterTurn) * quarterTurn
+    modelRoot.eulerAngles.z = round(modelRoot.eulerAngles.z / quarterTurn) * quarterTurn
   }
 
   private func shouldUsePrimitiveFallback() -> Bool {
