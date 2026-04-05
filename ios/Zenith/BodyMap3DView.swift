@@ -258,7 +258,7 @@ class BodyMap3DView: UIView {
   }
 
   private func orbitCameraPosition(around focus: SCNVector3) -> SCNVector3 {
-    let clampedPitch = clamp(orbitPitch, min: -0.45, max: 0.25)
+    let clampedPitch = clamp(orbitPitch, min: -1.2, max: 1.2)
     let cosPitch = cos(clampedPitch)
     return SCNVector3(
       focus.x + cameraDistance * sin(orbitYaw) * cosPitch,
@@ -319,7 +319,11 @@ class BodyMap3DView: UIView {
       moveCamera(to: SCNVector3(focus.x, focus.y, z), animated: animated)
       return
     }
-    cameraNode.constraints = nil
+    if let lookAtConstraint {
+      cameraNode.constraints = [lookAtConstraint]
+    } else {
+      cameraNode.constraints = nil
+    }
     camera.usesOrthographicProjection = false
     camera.fieldOfView = 36
     updateOrbitCamera(animated: animated)
@@ -793,7 +797,7 @@ class BodyMap3DView: UIView {
     case .changed:
       let translation = gesture.translation(in: scnView)
       orbitYaw += Float(translation.x) * 0.0048
-      orbitPitch = clamp(orbitPitch - Float(translation.y) * 0.0032, min: -0.45, max: 0.25)
+      orbitPitch = clamp(orbitPitch - Float(translation.y) * 0.0032, min: -1.2, max: 1.2)
       updateOrbitCamera(animated: false)
       gesture.setTranslation(.zero, in: scnView)
     case .ended, .cancelled, .failed:
