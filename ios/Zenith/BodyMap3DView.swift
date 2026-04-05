@@ -455,18 +455,37 @@ class BodyMap3DView: UIView {
   }
 
   private func normalizeModelOrientation(_ modelRoot: SCNNode) {
-    guard let initial = localGeometryBounds(of: modelRoot) else { return }
-    let initialSize = SCNVector3(initial.max.x - initial.min.x, initial.max.y - initial.min.y, initial.max.z - initial.min.z)
+    let base = modelRoot.eulerAngles
+    let uprightCandidates: [SCNVector3] = [
+      base,
+      SCNVector3(base.x + (.pi / 2), base.y, base.z),
+      SCNVector3(base.x - (.pi / 2), base.y, base.z),
+      SCNVector3(base.x, base.y, base.z + (.pi / 2)),
+      SCNVector3(base.x, base.y, base.z - (.pi / 2)),
+    ]
 
-    if initialSize.z > max(initialSize.x, initialSize.y) * 1.10 {
-      modelRoot.eulerAngles.x -= .pi / 2
-    } else if initialSize.x > max(initialSize.y, initialSize.z) * 1.10 {
-      modelRoot.eulerAngles.z += .pi / 2
+    var bestEuler = base
+    var bestScore: Float = -.greatestFiniteMagnitude
+
+    for candidate in uprightCandidates {
+      modelRoot.eulerAngles = candidate
+      guard let bounds = localGeometryBounds(of: modelRoot) else { continue }
+      let size = SCNVector3(bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y, bounds.max.z - bounds.min.z)
+      let dominantSpan = max(size.x, size.z)
+      guard dominantSpan > 0.0001 else { continue }
+      let heightDominance = size.y / dominantSpan
+      let score = size.y + (heightDominance * 10.0)
+      if score > bestScore {
+        bestScore = score
+        bestEuler = candidate
+      }
     }
+
+    modelRoot.eulerAngles = bestEuler
 
     guard let upright = localGeometryBounds(of: modelRoot) else { return }
     let uprightSize = SCNVector3(upright.max.x - upright.min.x, upright.max.y - upright.min.y, upright.max.z - upright.min.z)
-    if uprightSize.z > uprightSize.x * 1.10 {
+    if uprightSize.z > uprightSize.x {
       modelRoot.eulerAngles.y += .pi / 2
     }
   }
@@ -583,6 +602,12 @@ class BodyMap3DView: UIView {
       material.lightingModel = .physicallyBased
       material.multiply.contents = UIColor.white
       material.emission.contents = UIColor.black
+      material.readsFromDepthBuffer = true
+      material.writesToDepthBuffer = false
+      material.cullMode = .back
+      material.isDoubleSided = false
+      material.blendMode = .alpha
+      material.transparencyMode = .dualLayer
     }
   }
 
@@ -625,9 +650,11 @@ class BodyMap3DView: UIView {
     cameraDistance = max(2.35, radius * 2.45)
     minCameraDistance = max(1.8, radius * 1.8)
     maxCameraDistance = max(4.2, radius * 5.0)
-    frontBackCameraDistance = max(2.6, centeredDepth * 4.0 + 0.9)
-    // orthographicScale is effectively half-height in SceneKit; use half-height + margin, not full height.
-    frontBackOrthographicScale = Double(max(0.85, centeredHeight * 0.60))
+    frontBackCameraDistance = max(2.4, centeredDepth * 3.0 + 0.8)
+    // orthographicScale in SceneKit is half-height. Fit against both torso height and shoulder width.
+    let halfHeightFit = centeredHeight * 0.58
+    let halfWidthFit = centeredWidth * 0.72
+    frontBackOrthographicScale = Double(max(0.82, max(halfHeightFit, halfWidthFit)))
     focusNode.position = SCNVector3(0, max(0.06, centeredHeight * 0.08), 0)
     orbitYaw = defaultOrbitYaw
     orbitPitch = defaultOrbitPitch
@@ -938,7 +965,12 @@ class BodyMap3DView: UIView {
       material.lightingModel = .physicallyBased
       material.multiply.contents = tintColor
       material.transparency = shellAlpha
-      material.transparencyMode = .aOne
+      material.transparencyMode = .dualLayer
+      material.readsFromDepthBuffer = true
+      material.writesToDepthBuffer = false
+      material.cullMode = .back
+      material.isDoubleSided = false
+      material.blendMode = .alpha
       material.emission.contents = highlightColor.withAlphaComponent(emissionAlpha)
       if rendererMode == "primitive" {
         material.diffuse.contents = highlightColor.withAlphaComponent(shellAlpha)
