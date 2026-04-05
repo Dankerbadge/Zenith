@@ -87,6 +87,35 @@ var totalNodes = 0
 var geometryNodes = 0
 var names: [String] = []
 var geometryNodeNames: [String] = []
+var geometryBounds: [[String: Any]] = []
+
+func worldBounds(for node: SCNNode) -> (min: SCNVector3, max: SCNVector3)? {
+  let (bmin, bmax) = node.boundingBox
+  let corners = [
+    SCNVector3(bmin.x, bmin.y, bmin.z), SCNVector3(bmin.x, bmin.y, bmax.z),
+    SCNVector3(bmin.x, bmax.y, bmin.z), SCNVector3(bmin.x, bmax.y, bmax.z),
+    SCNVector3(bmax.x, bmin.y, bmin.z), SCNVector3(bmax.x, bmin.y, bmax.z),
+    SCNVector3(bmax.x, bmax.y, bmin.z), SCNVector3(bmax.x, bmax.y, bmax.z),
+  ]
+
+  var minV = SCNVector3(Float.greatestFiniteMagnitude, Float.greatestFiniteMagnitude, Float.greatestFiniteMagnitude)
+  var maxV = SCNVector3(-Float.greatestFiniteMagnitude, -Float.greatestFiniteMagnitude, -Float.greatestFiniteMagnitude)
+
+  for corner in corners {
+    let world = node.convertPosition(corner, to: scene.rootNode)
+    minV.x = min(minV.x, world.x)
+    minV.y = min(minV.y, world.y)
+    minV.z = min(minV.z, world.z)
+    maxV.x = max(maxV.x, world.x)
+    maxV.y = max(maxV.y, world.y)
+    maxV.z = max(maxV.z, world.z)
+  }
+
+  if !minV.x.isFinite || !minV.y.isFinite || !minV.z.isFinite || !maxV.x.isFinite || !maxV.y.isFinite || !maxV.z.isFinite {
+    return nil
+  }
+  return (minV, maxV)
+}
 
 func walk(_ node: SCNNode) {
   totalNodes += 1
@@ -100,6 +129,25 @@ func walk(_ node: SCNNode) {
     geometryNodes += 1
     if !trimmed.isEmpty {
       geometryNodeNames.append(trimmed)
+      if let bounds = worldBounds(for: node) {
+        let center = [
+          (bounds.min.x + bounds.max.x) * 0.5,
+          (bounds.min.y + bounds.max.y) * 0.5,
+          (bounds.min.z + bounds.max.z) * 0.5,
+        ]
+        let size = [
+          bounds.max.x - bounds.min.x,
+          bounds.max.y - bounds.min.y,
+          bounds.max.z - bounds.min.z,
+        ]
+        geometryBounds.append([
+          "name": trimmed,
+          "min": [bounds.min.x, bounds.min.y, bounds.min.z],
+          "max": [bounds.max.x, bounds.max.y, bounds.max.z],
+          "center": center,
+          "size": size,
+        ])
+      }
     }
   }
 
@@ -115,6 +163,7 @@ let payload: [String: Any] = [
   "geometryNodes": geometryNodes,
   "names": names,
   "geometryNodeNames": geometryNodeNames,
+  "geometryBounds": geometryBounds,
 ]
 
 let data = try JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
@@ -152,6 +201,28 @@ function inspectModel(assetPath) {
       geometryNodeNames: Array.isArray(parsed.geometryNodeNames)
         ? parsed.geometryNodeNames.map(String)
         : [],
+      geometryBounds: Array.isArray(parsed.geometryBounds)
+        ? parsed.geometryBounds
+            .map((entry) => ({
+              name: String(entry?.name || ''),
+              min: Array.isArray(entry?.min) ? entry.min.map((v) => Number(v || 0)) : [],
+              max: Array.isArray(entry?.max) ? entry.max.map((v) => Number(v || 0)) : [],
+              center: Array.isArray(entry?.center) ? entry.center.map((v) => Number(v || 0)) : [],
+              size: Array.isArray(entry?.size) ? entry.size.map((v) => Number(v || 0)) : [],
+            }))
+            .filter(
+              (entry) =>
+                entry.name &&
+                entry.min.length === 3 &&
+                entry.max.length === 3 &&
+                entry.center.length === 3 &&
+                entry.size.length === 3 &&
+                entry.min.every(Number.isFinite) &&
+                entry.max.every(Number.isFinite) &&
+                entry.center.every(Number.isFinite) &&
+                entry.size.every(Number.isFinite)
+            )
+        : [],
     };
   } finally {
     if (fs.existsSync(swiftPath)) {
@@ -166,6 +237,13 @@ function collectCounts(values) {
     counts.set(value, (counts.get(value) || 0) + 1);
   }
   return counts;
+}
+
+function distance3(a, b) {
+  const dx = a[0] - b[0];
+  const dy = a[1] - b[1];
+  const dz = a[2] - b[2];
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 function main() {
@@ -194,6 +272,77 @@ function main() {
   const unexpectedGeometryNames = inspection.geometryNodeNames.filter(
     (name) => !allowedGeometryNames.has(name)
   );
+  const boundsByName = new Map(inspection.geometryBounds.map((entry) => [entry.name, entry]));
+  const baseBodyBounds = boundsByName.get('BaseBody');
+  const detachedShells = [];
+  const leftRightMismatches = [];
+  const anatomicalPairMismatches = [];
+
+  if (baseBodyBounds) {
+    const baseCenter = baseBodyBounds.center;
+    const baseSpan = baseBodyBounds.max.map((value, index) => value - baseBodyBounds.min[index]);
+    const pad = baseSpan.map((span) => Math.max(0.08, span * 0.22));
+    const xMidlineTolerance = Math.max(0.015, baseSpan[0] * 0.03);
+    const mirrorXTolerance = Math.max(0.08, baseSpan[0] * 0.35);
+    const mirrorYZTolerance = Math.max(0.09, Math.max(baseSpan[1], baseSpan[2]) * 0.22);
+
+    for (const key of REQUIRED_REGION_KEYS) {
+      const region = boundsByName.get(key);
+      if (!region) continue;
+      const outOfBounds = region.center.some((value, axis) => {
+        const minAllowed = baseBodyBounds.min[axis] - pad[axis];
+        const maxAllowed = baseBodyBounds.max[axis] + pad[axis];
+        return value < minAllowed || value > maxAllowed;
+      });
+      if (outOfBounds) {
+        detachedShells.push(
+          `${key}(center=${region.center.map((value) => value.toFixed(3)).join(',')})`
+        );
+      }
+
+      if (key.endsWith('_L')) {
+        const pairKey = `${key.slice(0, -2)}_R`;
+        const pair = boundsByName.get(pairKey);
+        if (!pair) continue;
+        const leftX = region.center[0] - baseCenter[0];
+        const rightX = pair.center[0] - baseCenter[0];
+        if (leftX >= -xMidlineTolerance || rightX <= xMidlineTolerance) {
+          leftRightMismatches.push(`${key}/${pairKey}(invalid side placement)`);
+          continue;
+        }
+        const xMirrorDelta = Math.abs(Math.abs(leftX) - Math.abs(rightX));
+        const yDelta = Math.abs(region.center[1] - pair.center[1]);
+        const zDelta = Math.abs(region.center[2] - pair.center[2]);
+        if (xMirrorDelta > mirrorXTolerance || yDelta > mirrorYZTolerance || zDelta > mirrorYZTolerance) {
+          leftRightMismatches.push(
+            `${key}/${pairKey}(mirror drift: x=${xMirrorDelta.toFixed(3)}, y=${yDelta.toFixed(3)}, z=${zDelta.toFixed(3)})`
+          );
+        }
+      }
+    }
+
+    const anatomicalPairs = [
+      ['DELTS_FRONT_L', 'DELTS_REAR_L', 0.045],
+      ['DELTS_FRONT_R', 'DELTS_REAR_R', 0.045],
+      ['BICEPS_L', 'TRICEPS_L', 0.04],
+      ['BICEPS_R', 'TRICEPS_R', 0.04],
+      ['QUADS_L', 'HAMSTRINGS_L', 0.06],
+      ['QUADS_R', 'HAMSTRINGS_R', 0.06],
+      ['TIBIALIS_L', 'CALVES_L', 0.06],
+      ['TIBIALIS_R', 'CALVES_R', 0.06],
+    ];
+    for (const [aName, bName, minDistance] of anatomicalPairs) {
+      const a = boundsByName.get(aName);
+      const b = boundsByName.get(bName);
+      if (!a || !b) continue;
+      const distance = distance3(a.center, b.center);
+      if (distance < minDistance) {
+        anatomicalPairMismatches.push(
+          `${aName}/${bName}(distance=${distance.toFixed(3)}, required>=${minDistance.toFixed(3)})`
+        );
+      }
+    }
+  }
 
   assert(
     inspection.totalNodes >= 40 && inspection.totalNodes <= 200,
@@ -224,6 +373,19 @@ function main() {
     bannedNames.length === 0,
     `Banned helper/export junk node names detected: ${[...new Set(bannedNames)].join(', ')}.`
   );
+  assert(baseBodyBounds, 'Could not resolve BaseBody world bounds from model geometry.');
+  assert(
+    detachedShells.length === 0,
+    `Detached/off-body region shells detected: ${detachedShells.join(', ')}.`
+  );
+  assert(
+    leftRightMismatches.length === 0,
+    `Left/right region placement mismatches detected: ${leftRightMismatches.join(', ')}.`
+  );
+  assert(
+    anatomicalPairMismatches.length === 0,
+    `Anatomical pair separation mismatches detected: ${anatomicalPairMismatches.join(', ')}.`
+  );
 
   console.log('Body-map model structure verification passed.');
   console.log(`- Total nodes: ${inspection.totalNodes}`);
@@ -231,6 +393,9 @@ function main() {
   console.log('- BaseBody present exactly once');
   console.log(`- Required region node names present: ${REQUIRED_REGION_KEYS.length}`);
   console.log('- No duplicate region names, no unexpected geometry names, no banned helper names');
+  console.log('- Region shell centers are spatially aligned with BaseBody bounds');
+  console.log('- Left/right region pairs stay on correct sides and mirror within tolerance');
+  console.log('- Key front/back anatomical pairs are spatially distinct');
 }
 
 main();
