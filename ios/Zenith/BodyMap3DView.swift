@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import SceneKit
+import CoreMotion
 import React
 
 private struct BodyMapRegionDefinition {
@@ -109,13 +110,21 @@ class BodyMap3DView: UIView {
   private var cachedOverlayMode: String = "STIMULUS"
   private var orbitYaw: Float = 0
   private var orbitPitch: Float = -0.08
+  private var orbitRoll: Float = 0
   private var cameraDistance: Float = 3.35
   private var minCameraDistance: Float = 2.1
   private var maxCameraDistance: Float = 5.4
   private var frontBackOrthographicScale: Double = 1.15
   private var frontBackCameraDistance: Float = 3.1
+  private var lookAtConstraint: SCNLookAtConstraint?
   private var activeGestureCount = 0
   private var rendererMode: String = "unknown"
+  private let motionManager = CMMotionManager()
+  private var isGyroActive = false
+  private var gyroReferenceAttitude: CMAttitude?
+  private var gyroBaseYaw: Float = 0
+  private var gyroBasePitch: Float = 0
+  private var gyroBaseRoll: Float = 0
 
   private let defaultOrbitYaw: Float = 0.72
   private let defaultOrbitPitch: Float = 0.10
@@ -128,6 +137,10 @@ class BodyMap3DView: UIView {
   required init?(coder: NSCoder) {
     super.init(coder: coder)
     commonInit()
+  }
+
+  deinit {
+    stopGyroscope(resetReference: true)
   }
 
   private func commonInit() {
@@ -237,6 +250,7 @@ class BodyMap3DView: UIView {
 
     let target = SCNLookAtConstraint(target: focusNode)
     target.isGimbalLockEnabled = true
+    lookAtConstraint = target
     cameraNode.constraints = [target]
   }
 
@@ -244,6 +258,10 @@ class BodyMap3DView: UIView {
     SCNTransaction.begin()
     SCNTransaction.animationDuration = animated ? 0.22 : 0.0
     cameraNode.position = position
+    if (cameraNode.constraints?.isEmpty ?? true),
+       let orientation = orbitCameraOrientation(for: position, focus: focusWorldPosition(), roll: orbitRoll) {
+      cameraNode.simdOrientation = orientation
+    }
     SCNTransaction.commit()
   }
 
@@ -252,13 +270,50 @@ class BodyMap3DView: UIView {
   }
 
   private func orbitCameraPosition(around focus: SCNVector3) -> SCNVector3 {
-    let clampedPitch = max(-0.45, min(0.25, orbitPitch))
+    let clampedPitch = clamp(orbitPitch, min: -0.55, max: 0.35)
     let cosPitch = cos(clampedPitch)
     return SCNVector3(
       focus.x + cameraDistance * sin(orbitYaw) * cosPitch,
       focus.y + cameraDistance * sin(clampedPitch),
       focus.z + cameraDistance * cos(orbitYaw) * cosPitch
     )
+  }
+
+  private func orbitCameraOrientation(for position: SCNVector3, focus: SCNVector3, roll: Float) -> simd_quatf? {
+    let from = SIMD3<Float>(position.x, position.y, position.z)
+    let to = SIMD3<Float>(focus.x, focus.y, focus.z)
+    var forward = to - from
+    let forwardLength = simd_length(forward)
+    guard forwardLength.isFinite, forwardLength > 0.0001 else { return nil }
+    forward /= forwardLength
+
+    var worldUp = SIMD3<Float>(0, 1, 0)
+    if abs(simd_dot(forward, worldUp)) > 0.98 {
+      worldUp = SIMD3<Float>(0, 0, 1)
+    }
+
+    var right = simd_cross(worldUp, forward)
+    let rightLength = simd_length(right)
+    guard rightLength.isFinite, rightLength > 0.0001 else { return nil }
+    right /= rightLength
+
+    var up = simd_normalize(simd_cross(forward, right))
+    if !up.x.isFinite || !up.y.isFinite || !up.z.isFinite {
+      return nil
+    }
+
+    if abs(roll) > 0.0001 {
+      let c = cos(roll)
+      let s = sin(roll)
+      let rolledRight = right * c - up * s
+      let rolledUp = right * s + up * c
+      right = simd_normalize(rolledRight)
+      up = simd_normalize(rolledUp)
+    }
+
+    let worldZ = -forward
+    let rotation = simd_float3x3(columns: (right, up, worldZ))
+    return simd_quatf(rotation)
   }
 
   private func updateOrbitCamera(animated: Bool) {
@@ -270,19 +325,101 @@ class BodyMap3DView: UIView {
     let focus = focusWorldPosition()
     guard let camera = cameraNode.camera else { return }
     if preset != "ORBIT" {
+      stopGyroscope(resetReference: false)
       if activeGestureCount > 0 {
         activeGestureCount = 0
         emitInteractionState(false)
       }
+      if let lookAtConstraint {
+        cameraNode.constraints = [lookAtConstraint]
+      } else {
+        cameraNode.constraints = nil
+      }
       camera.usesOrthographicProjection = true
       camera.orthographicScale = frontBackOrthographicScale
+      orbitRoll = 0
       let z = preset == "BACK" ? (focus.z - frontBackCameraDistance) : (focus.z + frontBackCameraDistance)
       moveCamera(to: SCNVector3(focus.x, focus.y, z), animated: animated)
       return
     }
+    cameraNode.constraints = nil
     camera.usesOrthographicProjection = false
     camera.fieldOfView = 36
+    startGyroscopeIfNeeded()
     updateOrbitCamera(animated: animated)
+  }
+
+  private func startGyroscopeIfNeeded() {
+    guard motionManager.isDeviceMotionAvailable else {
+      isGyroActive = false
+      return
+    }
+    if motionManager.isDeviceMotionActive {
+      isGyroActive = true
+      return
+    }
+
+    motionManager.deviceMotionUpdateInterval = 1.0 / 60.0
+    gyroBaseYaw = orbitYaw
+    gyroBasePitch = orbitPitch
+    gyroBaseRoll = orbitRoll
+    gyroReferenceAttitude = nil
+
+    motionManager.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: OperationQueue.main) { [weak self] motion, error in
+      guard let self else { return }
+      guard self.currentCameraPreset() == "ORBIT" else { return }
+      guard error == nil, let motion else { return }
+      self.applyGyroMotion(motion)
+    }
+    isGyroActive = motionManager.isDeviceMotionActive
+  }
+
+  private func stopGyroscope(resetReference: Bool) {
+    if motionManager.isDeviceMotionActive {
+      motionManager.stopDeviceMotionUpdates()
+    }
+    isGyroActive = false
+    if resetReference {
+      gyroReferenceAttitude = nil
+    }
+  }
+
+  private func recenterGyroscope() {
+    guard let currentAttitude = motionManager.deviceMotion?.attitude.copy() as? CMAttitude else { return }
+    gyroReferenceAttitude = currentAttitude
+    gyroBaseYaw = orbitYaw
+    gyroBasePitch = orbitPitch
+    gyroBaseRoll = orbitRoll
+  }
+
+  private func applyGyroMotion(_ motion: CMDeviceMotion) {
+    if gyroReferenceAttitude == nil {
+      gyroReferenceAttitude = motion.attitude.copy() as? CMAttitude
+      gyroBaseYaw = orbitYaw
+      gyroBasePitch = orbitPitch
+      gyroBaseRoll = orbitRoll
+      return
+    }
+
+    guard let referenceAttitude = gyroReferenceAttitude,
+          let relativeAttitude = motion.attitude.copy() as? CMAttitude else {
+      return
+    }
+
+    relativeAttitude.multiply(byInverseOf: referenceAttitude)
+
+    let yawDelta = clamp(-Float(relativeAttitude.yaw), min: -.pi, max: .pi)
+    let pitchDelta = clamp(Float(relativeAttitude.pitch), min: -0.8, max: 0.8)
+    let rollDelta = clamp(-Float(relativeAttitude.roll), min: -0.9, max: 0.9)
+
+    orbitYaw = gyroBaseYaw + yawDelta
+    orbitPitch = clamp(gyroBasePitch + pitchDelta, min: -0.55, max: 0.35)
+    orbitRoll = clamp(gyroBaseRoll + (rollDelta * 0.65), min: -0.7, max: 0.7)
+    updateOrbitCamera(animated: false)
+  }
+
+  private func clamp(_ value: Float, min minValue: Float, max maxValue: Float) -> Float {
+    Swift.max(minValue, Swift.min(maxValue, value))
   }
 
   private func localGeometryBounds(of root: SCNNode) -> (min: SCNVector3, max: SCNVector3)? {
@@ -620,10 +757,20 @@ class BodyMap3DView: UIView {
     switch gesture.state {
     case .began:
       beginInteraction()
+      if isGyroActive {
+        recenterGyroscope()
+      }
     case .changed:
       let translation = gesture.translation(in: scnView)
-      orbitYaw += Float(translation.x) * 0.0048
-      orbitPitch = max(-0.45, min(0.25, orbitPitch - Float(translation.y) * 0.0032))
+      if isGyroActive {
+        gyroBaseYaw += Float(translation.x) * 0.0048
+        gyroBasePitch = clamp(gyroBasePitch - Float(translation.y) * 0.0032, min: -0.55, max: 0.35)
+        orbitYaw = gyroBaseYaw
+        orbitPitch = gyroBasePitch
+      } else {
+        orbitYaw += Float(translation.x) * 0.0048
+        orbitPitch = clamp(orbitPitch - Float(translation.y) * 0.0032, min: -0.55, max: 0.35)
+      }
       updateOrbitCamera(animated: false)
       gesture.setTranslation(.zero, in: scnView)
     case .ended, .cancelled, .failed:

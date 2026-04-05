@@ -208,7 +208,7 @@ export default function BodyMap3DProgressScreen() {
             ))}
           </View>
           <Text style={styles.meta}>
-            Tap a region to inspect details. In ORBIT mode, drag to rotate and pinch to zoom.
+            Tap a region to inspect details. In ORBIT mode, tilt to control the camera, pinch to zoom, and drag to trim.
           </Text>
         </GlassCard>
 
