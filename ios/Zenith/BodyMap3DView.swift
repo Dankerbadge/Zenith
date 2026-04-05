@@ -329,7 +329,7 @@ class BodyMap3DView: UIView {
     Swift.max(minValue, Swift.min(maxValue, value))
   }
 
-  private func localGeometryBounds(of root: SCNNode) -> (min: SCNVector3, max: SCNVector3)? {
+  private func localGeometryBounds(of subtreeRoot: SCNNode, in root: SCNNode) -> (min: SCNVector3, max: SCNVector3)? {
     var found = false
     var minV = SCNVector3(Float.greatestFiniteMagnitude, Float.greatestFiniteMagnitude, Float.greatestFiniteMagnitude)
     var maxV = SCNVector3(-Float.greatestFiniteMagnitude, -Float.greatestFiniteMagnitude, -Float.greatestFiniteMagnitude)
@@ -343,7 +343,7 @@ class BodyMap3DView: UIView {
       maxV.z = max(maxV.z, point.z)
     }
 
-    walkNodes(root) { node in
+    walkNodes(subtreeRoot) { node in
       guard node.geometry != nil else { return }
       let (bmin, bmax) = node.boundingBox
       let corners = [
@@ -361,6 +361,49 @@ class BodyMap3DView: UIView {
     return found ? (minV, maxV) : nil
   }
 
+  private func localGeometryBounds(of root: SCNNode) -> (min: SCNVector3, max: SCNVector3)? {
+    localGeometryBounds(of: root, in: root)
+  }
+
+  private func findGeometryNode(named targetName: String, in root: SCNNode) -> SCNNode? {
+    let needle = targetName.uppercased()
+    var found: SCNNode?
+    walkNodes(root) { node in
+      guard found == nil, node.geometry != nil else { return }
+      let trimmed = node.name?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() ?? ""
+      if trimmed == needle {
+        found = node
+      }
+    }
+    return found
+  }
+
+  private func regionCenter(for key: String, in root: SCNNode) -> SCNVector3? {
+    guard let id = regionIdByKey[key], let node = regionNodes[id] else { return nil }
+    guard let bounds = localGeometryBounds(of: node, in: root) else { return nil }
+    return SCNVector3(
+      (bounds.min.x + bounds.max.x) * 0.5,
+      (bounds.min.y + bounds.max.y) * 0.5,
+      (bounds.min.z + bounds.max.z) * 0.5
+    )
+  }
+
+  private func averageCenter(for keys: [String], in root: SCNNode) -> SCNVector3? {
+    var sx: Float = 0
+    var sy: Float = 0
+    var sz: Float = 0
+    var count: Float = 0
+    for key in keys {
+      guard let center = regionCenter(for: key, in: root) else { continue }
+      sx += center.x
+      sy += center.y
+      sz += center.z
+      count += 1
+    }
+    guard count > 0 else { return nil }
+    return SCNVector3(sx / count, sy / count, sz / count)
+  }
+
   private func normalizeModelOrientation(_ modelRoot: SCNNode) {
     let base = modelRoot.eulerAngles
     let uprightCandidates: [SCNVector3] = [
@@ -371,30 +414,53 @@ class BodyMap3DView: UIView {
       SCNVector3(base.x, base.y, base.z - (.pi / 2)),
     ]
 
-    var bestEuler = base
+    var bestUpright = base
     var bestScore: Float = -.greatestFiniteMagnitude
 
     for candidate in uprightCandidates {
       modelRoot.eulerAngles = candidate
       guard let bounds = localGeometryBounds(of: modelRoot) else { continue }
       let size = SCNVector3(bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y, bounds.max.z - bounds.min.z)
-      let dominantSpan = max(size.x, size.z)
-      guard dominantSpan > 0.0001 else { continue }
-      let heightDominance = size.y / dominantSpan
-      let score = size.y + (heightDominance * 10.0)
+      let horizontalSpan = max(size.x, size.z)
+      guard horizontalSpan > 0.0001 else { continue }
+      let score = size.y + ((size.y / horizontalSpan) * 12.0)
       if score > bestScore {
         bestScore = score
-        bestEuler = candidate
+        bestUpright = candidate
       }
     }
 
-    modelRoot.eulerAngles = bestEuler
+    modelRoot.eulerAngles = bestUpright
 
-    guard let upright = localGeometryBounds(of: modelRoot) else { return }
-    let uprightSize = SCNVector3(upright.max.x - upright.min.x, upright.max.y - upright.min.y, upright.max.z - upright.min.z)
-    if uprightSize.z > uprightSize.x {
-      modelRoot.eulerAngles.y += .pi / 2
+    if let front = averageCenter(for: ["CHEST_L", "CHEST_R", "ABS"], in: modelRoot),
+       let back = averageCenter(for: ["UPPER_BACK_L", "UPPER_BACK_R", "LOWER_BACK"], in: modelRoot) {
+      let dx = front.x - back.x
+      let dz = front.z - back.z
+      let forwardLen = hypotf(dx, dz)
+      if forwardLen > 0.0001 {
+        modelRoot.eulerAngles.y += -atan2(dx, dz)
+      }
     }
+
+    let mirrorPairs: [(String, String)] = [
+      ("CHEST_L", "CHEST_R"),
+      ("DELTS_FRONT_L", "DELTS_FRONT_R"),
+      ("QUADS_L", "QUADS_R"),
+      ("CALVES_L", "CALVES_R"),
+    ]
+    var handednessScore: Float = 0
+    for (leftKey, rightKey) in mirrorPairs {
+      if let left = regionCenter(for: leftKey, in: modelRoot),
+         let right = regionCenter(for: rightKey, in: modelRoot) {
+        handednessScore += left.x < right.x ? 1.0 : -1.0
+      }
+    }
+    if handednessScore < 0 {
+      modelRoot.eulerAngles.y += .pi
+    }
+
+    let quarterTurn = Float.pi / 2
+    modelRoot.eulerAngles.y = round(modelRoot.eulerAngles.y / quarterTurn) * quarterTurn
   }
 
   private func shouldUsePrimitiveFallback() -> Bool {
@@ -510,24 +576,26 @@ class BodyMap3DView: UIView {
       material.multiply.contents = UIColor.white
       material.emission.contents = UIColor.black
       material.readsFromDepthBuffer = true
-      material.writesToDepthBuffer = false
+      material.writesToDepthBuffer = true
       material.cullMode = .back
       material.isDoubleSided = false
       material.blendMode = .alpha
-      material.transparencyMode = .dualLayer
+      material.transparencyMode = .aOne
     }
   }
 
   private func fitLoadedModel(_ modelRoot: SCNNode) {
     normalizeModelOrientation(modelRoot)
-    guard let rawBounds = localGeometryBounds(of: modelRoot) else {
+    guard let rawModelBounds = localGeometryBounds(of: modelRoot) else {
       applyCameraPreset(animated: false)
       return
     }
+    let baseBodyNode = findGeometryNode(named: "BaseBody", in: modelRoot)
+    let rawBodyBounds = baseBodyNode.flatMap { localGeometryBounds(of: $0, in: modelRoot) } ?? rawModelBounds
 
-    let width = rawBounds.max.x - rawBounds.min.x
-    let height = rawBounds.max.y - rawBounds.min.y
-    let depth = rawBounds.max.z - rawBounds.min.z
+    let width = rawBodyBounds.max.x - rawBodyBounds.min.x
+    let height = rawBodyBounds.max.y - rawBodyBounds.min.y
+    let depth = rawBodyBounds.max.z - rawBodyBounds.min.z
 
     guard width > 0.0001, height > 0.0001, depth > 0.0001 else {
       applyCameraPreset(animated: false)
@@ -535,34 +603,35 @@ class BodyMap3DView: UIView {
     }
 
     let center = SCNVector3(
-      (rawBounds.min.x + rawBounds.max.x) * 0.5,
-      (rawBounds.min.y + rawBounds.max.y) * 0.5,
-      (rawBounds.min.z + rawBounds.max.z) * 0.5
+      (rawBodyBounds.min.x + rawBodyBounds.max.x) * 0.5,
+      (rawBodyBounds.min.y + rawBodyBounds.max.y) * 0.5,
+      (rawBodyBounds.min.z + rawBodyBounds.max.z) * 0.5
     )
 
     // Use translation instead of pivot so the focus point and bounds stay stable.
     modelRoot.pivot = SCNMatrix4Identity
     modelRoot.position = SCNVector3(-center.x, -center.y, -center.z)
 
-    guard let centeredBounds = localGeometryBounds(of: modelRoot) else {
+    guard let centeredModelBounds = localGeometryBounds(of: modelRoot) else {
       applyCameraPreset(animated: false)
       return
     }
+    let centeredBodyBounds = baseBodyNode.flatMap { localGeometryBounds(of: $0, in: modelRoot) } ?? centeredModelBounds
 
-    let centeredWidth = centeredBounds.max.x - centeredBounds.min.x
-    let centeredHeight = centeredBounds.max.y - centeredBounds.min.y
-    let centeredDepth = centeredBounds.max.z - centeredBounds.min.z
+    let centeredWidth = centeredBodyBounds.max.x - centeredBodyBounds.min.x
+    let centeredHeight = centeredBodyBounds.max.y - centeredBodyBounds.min.y
+    let centeredDepth = centeredBodyBounds.max.z - centeredBodyBounds.min.z
 
     let radius = max(centeredWidth, max(centeredHeight, centeredDepth)) * 0.5
-    cameraDistance = max(2.35, radius * 2.45)
-    minCameraDistance = max(1.8, radius * 1.8)
-    maxCameraDistance = max(4.2, radius * 5.0)
-    frontBackCameraDistance = max(2.4, centeredDepth * 3.0 + 0.8)
+    cameraDistance = max(2.0, radius * 2.35)
+    minCameraDistance = max(1.45, radius * 1.45)
+    maxCameraDistance = max(3.25, radius * 3.3)
+    frontBackCameraDistance = max(1.8, centeredDepth * 1.9 + 0.45)
     // orthographicScale in SceneKit is half-height. Fit against both torso height and shoulder width.
-    let halfHeightFit = centeredHeight * 0.58
-    let halfWidthFit = centeredWidth * 0.72
-    frontBackOrthographicScale = Double(max(0.82, max(halfHeightFit, halfWidthFit)))
-    focusNode.position = SCNVector3(0, max(0.06, centeredHeight * 0.08), 0)
+    let halfHeightFit = centeredHeight * 0.62
+    let halfWidthFit = centeredWidth * 0.78
+    frontBackOrthographicScale = Double(max(0.90, max(halfHeightFit, halfWidthFit)))
+    focusNode.position = SCNVector3(0, 0, 0)
     orbitYaw = defaultOrbitYaw
     orbitPitch = defaultOrbitPitch
     cameraNode.camera?.fieldOfView = 36
@@ -848,12 +917,12 @@ class BodyMap3DView: UIView {
     let neutralPlate = UIColor(hex: "#1A222D")
     let highlightColor = selected ? blend(color, UIColor.white, t: 0.10) : color
     let tintStrength = selected
-      ? (0.22 + clamped * 0.70)
-      : (0.06 + clamped * 0.74)
+      ? (0.16 + clamped * 0.66)
+      : (0.03 + clamped * 0.55)
     let tintColor = blend(neutralPlate, highlightColor, t: tintStrength)
     let shellAlpha = selected
-      ? (0.18 + clamped * 0.70)
-      : (0.06 + clamped * 0.68)
+      ? (0.10 + clamped * 0.56)
+      : (0.02 + clamped * 0.42)
     let emissionAlpha = selected
       ? (0.03 + clamped * 0.08)
       : (0.00 + clamped * 0.02)
@@ -862,9 +931,9 @@ class BodyMap3DView: UIView {
       material.lightingModel = .physicallyBased
       material.multiply.contents = tintColor
       material.transparency = shellAlpha
-      material.transparencyMode = .dualLayer
+      material.transparencyMode = .aOne
       material.readsFromDepthBuffer = true
-      material.writesToDepthBuffer = false
+      material.writesToDepthBuffer = true
       material.cullMode = .back
       material.isDoubleSided = false
       material.blendMode = .alpha
