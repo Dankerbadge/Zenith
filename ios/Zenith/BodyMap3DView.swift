@@ -614,17 +614,32 @@ class BodyMap3DView: UIView {
       material.multiply.contents = UIColor.white
       material.emission.contents = UIColor.black
       material.readsFromDepthBuffer = true
-      material.writesToDepthBuffer = false
+      material.writesToDepthBuffer = true
       material.cullMode = .back
       material.isDoubleSided = true
-      material.blendMode = .alpha
+      material.blendMode = .replace
       material.transparencyMode = .aOne
+      material.transparency = 1.0
     }
   }
 
   private func prepareLoadedBaseMaterials(_ root: SCNNode) {
     walkNodes(root) { [weak self] node in
       guard let self, node.geometry != nil, self.resolveRegionNode(node) == nil else { return }
+      if node.name?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "BASEBODY",
+         let geometry = node.geometry,
+         !geometry.materials.isEmpty {
+        for material in geometry.materials {
+          let isTransparent = material.transparency < 0.99
+          material.lightingModel = .physicallyBased
+          material.isDoubleSided = true
+          material.readsFromDepthBuffer = true
+          material.writesToDepthBuffer = !isTransparent
+          material.blendMode = isTransparent ? .alpha : .replace
+          material.transparencyMode = .aOne
+        }
+        return
+      }
       node.geometry?.materials = [self.baseMaterial()]
     }
   }
@@ -971,7 +986,7 @@ class BodyMap3DView: UIView {
       : blend(anatomyColor, color, t: heatBlend)
     let shellAlpha: CGFloat = rendererMode == "primitive"
       ? (selected ? 0.88 : 0.76)
-      : (selected ? 0.96 : 0.88)
+      : 1.0
     let emissionAlpha = selected ? 0.08 : (0.01 + clamped * 0.03)
 
     for material in geometry.materials {
@@ -981,10 +996,10 @@ class BodyMap3DView: UIView {
       material.transparency = shellAlpha
       material.transparencyMode = .aOne
       material.readsFromDepthBuffer = true
-      material.writesToDepthBuffer = false
+      material.writesToDepthBuffer = rendererMode != "primitive"
       material.cullMode = .back
       material.isDoubleSided = true
-      material.blendMode = .alpha
+      material.blendMode = rendererMode == "primitive" ? .alpha : .replace
       material.emission.contents = displayColor.withAlphaComponent(emissionAlpha)
     }
   }
