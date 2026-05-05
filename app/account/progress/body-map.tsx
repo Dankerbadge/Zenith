@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
 
@@ -76,6 +76,7 @@ function resolveBuildStamp(): string {
 }
 
 export default function BodyMap3DProgressScreen() {
+  const { height: viewportHeight } = useWindowDimensions();
   const [timeframe, setTimeframe] = useState<BodyMapTimeframe>('SESSION');
   const [overlayMode, setOverlayMode] = useState<BodyMapLens>('STIMULUS');
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('FRONT');
@@ -146,6 +147,7 @@ export default function BodyMap3DProgressScreen() {
     return summary?.topRegions || [];
   }, [overlayMode, snapshot]);
   const buildStamp = useMemo(() => resolveBuildStamp(), []);
+  const mapHeight = Math.max(520, Math.min(680, Math.round(viewportHeight * 0.64)));
 
   return (
     <Screen edges={['top']} aura>
@@ -167,59 +169,71 @@ export default function BodyMap3DProgressScreen() {
           </Pressable>
         </View>
 
-        <GlassCard>
-          <Text style={styles.cardTitle}>Timeframe</Text>
-          <View style={styles.pillRow}>
-            {BODY_MAP_TIMEFRAMES.map((value) => (
-              <Pressable
-                key={value}
-                style={[styles.pill, timeframe === value && styles.pillActive]}
-                onPress={() => setTimeframe(value)}
-              >
-                <Text style={[styles.pillText, timeframe === value && styles.pillTextActive]}>{value}</Text>
-              </Pressable>
-            ))}
+        <View style={styles.controlDock}>
+          <View style={styles.controlBlock}>
+            <Text style={styles.controlLabel}>Time</Text>
+            <View style={styles.pillRowCompact}>
+              {BODY_MAP_TIMEFRAMES.map((value) => (
+                <Pressable
+                  key={value}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Timeframe ${value}`}
+                  accessibilityState={{ selected: timeframe === value }}
+                  hitSlop={6}
+                  style={[styles.pill, timeframe === value && styles.pillActive]}
+                  onPress={() => setTimeframe(value)}
+                >
+                  <Text style={[styles.pillText, timeframe === value && styles.pillTextActive]}>{value}</Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
-          <Text style={styles.meta}>Controls the log window used to compute all body-map scores.</Text>
-        </GlassCard>
-
-        <GlassCard>
-          <Text style={styles.cardTitle}>Lens + View</Text>
-          <View style={styles.pillRow}>
-            {BODY_MAP_LENSES.map((lens) => (
-              <Pressable
-                key={lens}
-                style={[styles.pill, overlayMode === lens && styles.pillActive]}
-                onPress={() => setOverlayMode(lens)}
-              >
-                <Text style={[styles.pillText, overlayMode === lens && styles.pillTextActive]}>{lens}</Text>
-              </Pressable>
-            ))}
+          <View style={styles.controlBlock}>
+            <Text style={styles.controlLabel}>Lens</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillRowCompact}>
+              {BODY_MAP_LENSES.map((lens) => (
+                <Pressable
+                  key={lens}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Body map lens ${lens}`}
+                  accessibilityState={{ selected: overlayMode === lens }}
+                  hitSlop={6}
+                  style={[styles.pill, overlayMode === lens && styles.pillActive]}
+                  onPress={() => setOverlayMode(lens)}
+                >
+                  <Text style={[styles.pillText, overlayMode === lens && styles.pillTextActive]}>{lens}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
           </View>
-          <View style={styles.pillRow}>
-            {CAMERA_PRESETS.map((preset) => (
-              <Pressable
-                key={preset}
-                style={[styles.pill, cameraPreset === preset && styles.pillActive]}
-                onPress={() => setCameraPreset(preset)}
-              >
-                <Text style={[styles.pillText, cameraPreset === preset && styles.pillTextActive]}>{preset}</Text>
-              </Pressable>
-            ))}
+          <View style={styles.controlBlock}>
+            <Text style={styles.controlLabel}>View</Text>
+            <View style={styles.pillRowCompact}>
+              {CAMERA_PRESETS.map((preset) => (
+                <Pressable
+                  key={preset}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Camera view ${preset}`}
+                  accessibilityState={{ selected: cameraPreset === preset }}
+                  hitSlop={6}
+                  style={[styles.pill, cameraPreset === preset && styles.pillActive]}
+                  onPress={() => setCameraPreset(preset)}
+                >
+                  <Text style={[styles.pillText, cameraPreset === preset && styles.pillTextActive]}>{preset}</Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
-          <Text style={styles.meta}>
-            Tap a region to inspect details. In ORBIT mode, drag to rotate and pinch to zoom.
-          </Text>
-        </GlassCard>
+        </View>
 
         <GlassCard style={styles.mapCard}>
           {loading ? (
-            <View style={[styles.map, styles.mapFallback]}>
+            <View style={[styles.map, { height: mapHeight }, styles.mapFallback]}>
               <ActivityIndicator color={NEON_THEME.color.neonCyan} />
               <Text style={styles.meta}>Computing snapshot…</Text>
             </View>
           ) : error ? (
-            <View style={[styles.map, styles.mapFallback]}>
+            <View style={[styles.map, { height: mapHeight }, styles.mapFallback]}>
               <Text style={styles.fallbackTitle}>Couldn’t compute body map</Text>
               <Text style={styles.fallbackBody}>{error}</Text>
               <Pressable style={[styles.pill, styles.retryPill]} onPress={() => void refresh()}>
@@ -228,7 +242,7 @@ export default function BodyMap3DProgressScreen() {
             </View>
           ) : Platform.OS === 'ios' ? (
             <BodyMap3DNativeView
-              style={styles.map}
+              style={[styles.map, { height: mapHeight }]}
               overlayMode={overlayMode}
               activeLens={overlayMode}
               cameraPreset={cameraPreset}
@@ -256,14 +270,14 @@ export default function BodyMap3DProgressScreen() {
               }}
             />
           ) : (
-            <View style={[styles.map, styles.mapFallback]}>
-              <Text style={styles.fallbackTitle}>iOS Native Preview</Text>
-              <Text style={styles.fallbackBody}>3D Body Map is currently wired for iOS native renderer.</Text>
+            <View style={[styles.map, { height: mapHeight }, styles.mapFallback]}>
+              <Text style={styles.fallbackTitle}>3D preview unavailable</Text>
+              <Text style={styles.fallbackBody}>Use the selection, hotspot, and history summaries below.</Text>
             </View>
           )}
         </GlassCard>
 
-        {Platform.OS === 'ios' && rendererMode && rendererMode !== 'asset' ? (
+        {__DEV__ && Platform.OS === 'ios' && rendererMode && rendererMode !== 'asset' ? (
           <GlassCard>
             <Text style={styles.cardTitle}>Renderer Status</Text>
             <Text style={styles.meta}>
@@ -298,10 +312,18 @@ export default function BodyMap3DProgressScreen() {
           <Text style={styles.cardTitle}>{overlayMode} Hotspots</Text>
           {topRegions.length ? (
             topRegions.map((region) => (
-              <View key={region.id} style={styles.row}>
+              <Pressable
+                key={region.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Select ${region.label}. Score ${region.score}`}
+                accessibilityState={{ selected: selectedRegionId === region.id }}
+                hitSlop={6}
+                style={({ pressed }) => [styles.row, selectedRegionId === region.id && styles.rowSelected, pressed && styles.rowPressed]}
+                onPress={() => setSelectedRegionId(region.id)}
+              >
                 <Text style={styles.rowLabel}>{region.label}</Text>
                 <Text style={styles.rowValue}>{region.score}</Text>
-              </View>
+              </Pressable>
             ))
           ) : (
             <Text style={styles.meta}>No regional load data yet.</Text>
@@ -333,24 +355,36 @@ export default function BodyMap3DProgressScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, paddingBottom: 40, gap: 12 },
+  content: { padding: 14, paddingBottom: 40, gap: 10 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   back: { color: NEON_THEME.color.neonCyan, fontWeight: '900' },
   titleStack: { alignItems: 'center', gap: 2 },
   title: { color: NEON_THEME.color.textPrimary, fontWeight: '900', fontSize: 20 },
   buildStamp: { color: NEON_THEME.color.textSecondary, fontWeight: '700', fontSize: 11 },
   historyToggle: { color: NEON_THEME.color.textSecondary, fontWeight: '800' },
+  controlDock: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: 'rgba(5,10,18,0.78)',
+    padding: 10,
+    gap: 8,
+  },
+  controlBlock: { gap: 6 },
+  controlLabel: { color: NEON_THEME.color.textSecondary, fontWeight: '900', fontSize: 11, textTransform: 'uppercase' },
   cardTitle: { color: NEON_THEME.color.textPrimary, fontWeight: '900', fontSize: 14 },
   meta: { color: NEON_THEME.color.textSecondary, fontWeight: '700', marginTop: 10, lineHeight: 18 },
-  mapCard: { padding: 8 },
-  map: { width: '100%', height: 420, borderRadius: 14, overflow: 'hidden' },
+  mapCard: { padding: 6, borderRadius: 18 },
+  map: { width: '100%', borderRadius: 14, overflow: 'hidden' },
   mapFallback: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#101723' },
   fallbackTitle: { color: '#DCEBFF', fontWeight: '900', fontSize: 16, textAlign: 'center' },
   fallbackBody: { color: '#A9C4CF', marginTop: 6, fontWeight: '700', textAlign: 'center' },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  pillRowCompact: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   pill: {
+    minHeight: 36,
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
@@ -364,7 +398,9 @@ const styles = StyleSheet.create({
   scoreGrid: { marginTop: 8, gap: 6 },
   scoreLine: { color: '#DFF8FF', fontWeight: '700', fontSize: 13 },
   scoreLineActive: { color: NEON_THEME.color.neonCyan, fontWeight: '900' },
-  row: { marginTop: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  row: { marginTop: 10, minHeight: 44, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 6, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  rowSelected: { backgroundColor: 'rgba(0,217,255,0.10)' },
+  rowPressed: { opacity: 0.86 },
   rowLabel: { color: '#DFF4FF', fontWeight: '700', flex: 1 },
   rowValue: { color: '#98ECFF', fontWeight: '900' },
 });
