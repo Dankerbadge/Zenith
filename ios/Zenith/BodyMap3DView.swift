@@ -412,14 +412,15 @@ class BodyMap3DView: UIView {
     let base = modelRoot.eulerAngles
     let quarterTurn = Float.pi / 2
     let axisTurns: [Float] = [0, quarterTurn, .pi, -quarterTurn]
+    let measurementRoot = modelRoot.parent ?? modelRoot
 
     func orientationScore() -> Float? {
-      guard let top = averageCenter(for: ["NECK", "TRAPS_L", "TRAPS_R", "CHEST_L", "CHEST_R"], in: modelRoot),
-            let bottom = averageCenter(for: ["CALVES_L", "CALVES_R", "TIBIALIS_L", "TIBIALIS_R", "HAMSTRINGS_L", "HAMSTRINGS_R", "QUADS_L", "QUADS_R"], in: modelRoot),
-            let front = averageCenter(for: ["CHEST_L", "CHEST_R", "ABS", "HIP_FLEXORS_L", "HIP_FLEXORS_R", "QUADS_L", "QUADS_R", "TIBIALIS_L", "TIBIALIS_R"], in: modelRoot),
-            let back = averageCenter(for: ["UPPER_BACK_L", "UPPER_BACK_R", "LOWER_BACK", "GLUTES_L", "GLUTES_R", "HAMSTRINGS_L", "HAMSTRINGS_R", "CALVES_L", "CALVES_R"], in: modelRoot),
-            let left = averageCenter(for: ["CHEST_L", "DELTS_FRONT_L", "DELTS_SIDE_L", "DELTS_REAR_L", "BICEPS_L", "TRICEPS_L", "FOREARMS_L", "LATS_L", "TRAPS_L", "OBLIQUES_L", "GLUTES_L", "HIP_FLEXORS_L", "ADDUCTORS_L", "QUADS_L", "HAMSTRINGS_L", "CALVES_L", "TIBIALIS_L"], in: modelRoot),
-            let right = averageCenter(for: ["CHEST_R", "DELTS_FRONT_R", "DELTS_SIDE_R", "DELTS_REAR_R", "BICEPS_R", "TRICEPS_R", "FOREARMS_R", "LATS_R", "TRAPS_R", "OBLIQUES_R", "GLUTES_R", "HIP_FLEXORS_R", "ADDUCTORS_R", "QUADS_R", "HAMSTRINGS_R", "CALVES_R", "TIBIALIS_R"], in: modelRoot) else {
+      guard let top = averageCenter(for: ["NECK", "TRAPS_L", "TRAPS_R", "CHEST_L", "CHEST_R"], in: measurementRoot),
+            let bottom = averageCenter(for: ["CALVES_L", "CALVES_R", "TIBIALIS_L", "TIBIALIS_R", "HAMSTRINGS_L", "HAMSTRINGS_R", "QUADS_L", "QUADS_R"], in: measurementRoot),
+            let front = averageCenter(for: ["CHEST_L", "CHEST_R", "ABS", "HIP_FLEXORS_L", "HIP_FLEXORS_R", "QUADS_L", "QUADS_R", "TIBIALIS_L", "TIBIALIS_R"], in: measurementRoot),
+            let back = averageCenter(for: ["UPPER_BACK_L", "UPPER_BACK_R", "LOWER_BACK", "GLUTES_L", "GLUTES_R", "HAMSTRINGS_L", "HAMSTRINGS_R", "CALVES_L", "CALVES_R"], in: measurementRoot),
+            let left = averageCenter(for: ["CHEST_L", "DELTS_FRONT_L", "DELTS_SIDE_L", "DELTS_REAR_L", "BICEPS_L", "TRICEPS_L", "FOREARMS_L", "LATS_L", "TRAPS_L", "OBLIQUES_L", "GLUTES_L", "HIP_FLEXORS_L", "ADDUCTORS_L", "QUADS_L", "HAMSTRINGS_L", "CALVES_L", "TIBIALIS_L"], in: measurementRoot),
+            let right = averageCenter(for: ["CHEST_R", "DELTS_FRONT_R", "DELTS_SIDE_R", "DELTS_REAR_R", "BICEPS_R", "TRICEPS_R", "FOREARMS_R", "LATS_R", "TRAPS_R", "OBLIQUES_R", "GLUTES_R", "HIP_FLEXORS_R", "ADDUCTORS_R", "QUADS_R", "HAMSTRINGS_R", "CALVES_R", "TIBIALIS_R"], in: measurementRoot) else {
         return nil
       }
 
@@ -452,7 +453,7 @@ class BodyMap3DView: UIView {
           let score: Float
           if let anatomyScore = orientationScore() {
             score = anatomyScore
-          } else if let bounds = localGeometryBounds(of: modelRoot) {
+          } else if let bounds = localGeometryBounds(of: modelRoot, in: measurementRoot) {
             let size = SCNVector3(bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y, bounds.max.z - bounds.min.z)
             let horizontalSpan = max(size.x, size.z)
             guard horizontalSpan > 0.0001 else { continue }
@@ -471,20 +472,20 @@ class BodyMap3DView: UIView {
 
     modelRoot.eulerAngles = bestOrientation
 
-    if let top = averageCenter(for: ["NECK", "TRAPS_L", "TRAPS_R"], in: modelRoot),
-       let bottom = averageCenter(for: ["CALVES_L", "CALVES_R", "TIBIALIS_L", "TIBIALIS_R"], in: modelRoot),
+    if let top = averageCenter(for: ["NECK", "TRAPS_L", "TRAPS_R"], in: measurementRoot),
+       let bottom = averageCenter(for: ["CALVES_L", "CALVES_R", "TIBIALIS_L", "TIBIALIS_R"], in: measurementRoot),
        top.y < bottom.y {
       modelRoot.eulerAngles.x += .pi
     }
 
     var yFlipVotes = 0
-    if let front = averageCenter(for: ["CHEST_L", "CHEST_R", "ABS"], in: modelRoot),
-       let back = averageCenter(for: ["UPPER_BACK_L", "UPPER_BACK_R", "LOWER_BACK"], in: modelRoot),
+    if let front = averageCenter(for: ["CHEST_L", "CHEST_R", "ABS"], in: measurementRoot),
+       let back = averageCenter(for: ["UPPER_BACK_L", "UPPER_BACK_R", "LOWER_BACK"], in: measurementRoot),
        front.z < back.z {
       yFlipVotes += 1
     }
-    if let left = averageCenter(for: ["CHEST_L", "DELTS_FRONT_L", "QUADS_L"], in: modelRoot),
-       let right = averageCenter(for: ["CHEST_R", "DELTS_FRONT_R", "QUADS_R"], in: modelRoot),
+    if let left = averageCenter(for: ["CHEST_L", "DELTS_FRONT_L", "QUADS_L"], in: measurementRoot),
+       let right = averageCenter(for: ["CHEST_R", "DELTS_FRONT_R", "QUADS_R"], in: measurementRoot),
        right.x < left.x {
       yFlipVotes += 1
     }
@@ -517,6 +518,7 @@ class BodyMap3DView: UIView {
     material.roughness.contents = 0.95
     material.metalness.contents = 0.0
     material.lightingModel = .physicallyBased
+    material.isDoubleSided = true
     return material
   }
 
@@ -527,6 +529,7 @@ class BodyMap3DView: UIView {
     material.roughness.contents = 0.50
     material.metalness.contents = 0.0
     material.lightingModel = .physicallyBased
+    material.isDoubleSided = true
     return material
   }
 
@@ -574,6 +577,7 @@ class BodyMap3DView: UIView {
       bindNodesFromLoadedScene(container)
 
       if !regionNodes.isEmpty {
+        prepareLoadedBaseMaterials(container)
         fitLoadedModel(container)
         return true
       }
@@ -610,22 +614,30 @@ class BodyMap3DView: UIView {
       material.multiply.contents = UIColor.white
       material.emission.contents = UIColor.black
       material.readsFromDepthBuffer = true
-      material.writesToDepthBuffer = true
+      material.writesToDepthBuffer = false
       material.cullMode = .back
-      material.isDoubleSided = false
+      material.isDoubleSided = true
       material.blendMode = .alpha
       material.transparencyMode = .aOne
     }
   }
 
+  private func prepareLoadedBaseMaterials(_ root: SCNNode) {
+    walkNodes(root) { [weak self] node in
+      guard let self, node.geometry != nil, self.resolveRegionNode(node) == nil else { return }
+      node.geometry?.materials = [self.baseMaterial()]
+    }
+  }
+
   private func fitLoadedModel(_ modelRoot: SCNNode) {
     normalizeModelOrientation(modelRoot)
-    guard let rawModelBounds = localGeometryBounds(of: modelRoot) else {
+    let measurementRoot = modelRoot.parent ?? modelRoot
+    guard let rawModelBounds = localGeometryBounds(of: modelRoot, in: measurementRoot) else {
       applyCameraPreset(animated: false)
       return
     }
     let baseBodyNode = findGeometryNode(named: "BaseBody", in: modelRoot)
-    let rawBodyBounds = baseBodyNode.flatMap { localGeometryBounds(of: $0, in: modelRoot) } ?? rawModelBounds
+    let rawBodyBounds = baseBodyNode.flatMap { localGeometryBounds(of: $0, in: measurementRoot) } ?? rawModelBounds
 
     let width = rawBodyBounds.max.x - rawBodyBounds.min.x
     let height = rawBodyBounds.max.y - rawBodyBounds.min.y
@@ -644,13 +656,17 @@ class BodyMap3DView: UIView {
 
     // Use translation instead of pivot so the focus point and bounds stay stable.
     modelRoot.pivot = SCNMatrix4Identity
-    modelRoot.position = SCNVector3(-center.x, -center.y, -center.z)
+    modelRoot.position = SCNVector3(
+      modelRoot.position.x - center.x,
+      modelRoot.position.y - center.y,
+      modelRoot.position.z - center.z
+    )
 
-    guard let centeredModelBounds = localGeometryBounds(of: modelRoot) else {
+    guard let centeredModelBounds = localGeometryBounds(of: modelRoot, in: measurementRoot) else {
       applyCameraPreset(animated: false)
       return
     }
-    let centeredBodyBounds = baseBodyNode.flatMap { localGeometryBounds(of: $0, in: modelRoot) } ?? centeredModelBounds
+    let centeredBodyBounds = baseBodyNode.flatMap { localGeometryBounds(of: $0, in: measurementRoot) } ?? centeredModelBounds
 
     let centeredWidth = centeredBodyBounds.max.x - centeredBodyBounds.min.x
     let centeredHeight = centeredBodyBounds.max.y - centeredBodyBounds.min.y
@@ -660,11 +676,11 @@ class BodyMap3DView: UIView {
     cameraDistance = max(2.0, radius * 2.35)
     minCameraDistance = max(1.45, radius * 1.45)
     maxCameraDistance = max(3.25, radius * 3.3)
-    frontBackCameraDistance = max(1.8, centeredDepth * 1.9 + 0.45)
+    frontBackCameraDistance = max(1.9, centeredDepth * 2.15 + 0.55)
     // orthographicScale in SceneKit is half-height. Fit against both torso height and shoulder width.
-    let halfHeightFit = centeredHeight * 0.62
-    let halfWidthFit = centeredWidth * 0.78
-    frontBackOrthographicScale = Double(max(0.90, max(halfHeightFit, halfWidthFit)))
+    let halfHeightFit = centeredHeight * 0.66
+    let halfWidthFit = centeredWidth * 0.92
+    frontBackOrthographicScale = Double(max(1.04, max(halfHeightFit, halfWidthFit)))
     focusNode.position = SCNVector3(0, 0, 0)
     orbitYaw = defaultOrbitYaw
     orbitPitch = defaultOrbitPitch
@@ -914,7 +930,7 @@ class BodyMap3DView: UIView {
       let score = regionScores[id] ?? 0
       let normalized = max(0.0, min(1.0, score / 100.0))
       let color = colorForIntensity(normalized)
-      applyRegionTint(to: node, color: color, normalized: normalized, selected: false)
+      applyRegionTint(to: node, regionId: id, color: color, normalized: normalized, selected: false)
     }
 
     CATransaction.commit()
@@ -935,46 +951,62 @@ class BodyMap3DView: UIView {
 
       // Keep selection purely visual; scaling shells makes anatomy read like armor.
       node.scale = SCNVector3(1, 1, 1)
-      applyRegionTint(to: node, color: baseColor, normalized: normalized, selected: isSelected)
+      applyRegionTint(to: node, regionId: id, color: baseColor, normalized: normalized, selected: isSelected)
     }
 
     CATransaction.commit()
   }
 
-  private func applyRegionTint(to node: SCNNode, color: UIColor, normalized: CGFloat, selected: Bool) {
+  private func applyRegionTint(to node: SCNNode, regionId: Int, color: UIColor, normalized: CGFloat, selected: Bool) {
     guard let geometry = node.geometry else { return }
     if geometry.materials.isEmpty {
       geometry.materials = [regionMaterial()]
     }
 
     let clamped = max(0, min(1, normalized))
-    let neutralPlate = UIColor(hex: "#1A222D")
-    let highlightColor = selected ? blend(color, UIColor.white, t: 0.10) : color
-    let tintStrength = selected
-      ? (0.16 + clamped * 0.66)
-      : (0.03 + clamped * 0.55)
-    let tintColor = blend(neutralPlate, highlightColor, t: tintStrength)
-    let shellAlpha = selected
-      ? (0.10 + clamped * 0.56)
-      : (0.02 + clamped * 0.42)
-    let emissionAlpha = selected
-      ? (0.03 + clamped * 0.08)
-      : (0.00 + clamped * 0.02)
+    let anatomyColor = anatomyColorForRegion(regionId)
+    let heatBlend = clamped <= 0.02 ? 0.0 : (0.22 + clamped * 0.58)
+    let displayColor = selected
+      ? blend(blend(anatomyColor, color, t: heatBlend), UIColor.white, t: 0.12)
+      : blend(anatomyColor, color, t: heatBlend)
+    let shellAlpha: CGFloat = rendererMode == "primitive"
+      ? (selected ? 0.88 : 0.76)
+      : (selected ? 0.96 : 0.88)
+    let emissionAlpha = selected ? 0.08 : (0.01 + clamped * 0.03)
 
     for material in geometry.materials {
       material.lightingModel = .physicallyBased
-      material.multiply.contents = tintColor
+      material.diffuse.contents = displayColor.withAlphaComponent(shellAlpha)
+      material.multiply.contents = UIColor.white
       material.transparency = shellAlpha
       material.transparencyMode = .aOne
       material.readsFromDepthBuffer = true
-      material.writesToDepthBuffer = true
+      material.writesToDepthBuffer = false
       material.cullMode = .back
-      material.isDoubleSided = false
+      material.isDoubleSided = true
       material.blendMode = .alpha
-      material.emission.contents = highlightColor.withAlphaComponent(emissionAlpha)
-      if rendererMode == "primitive" {
-        material.diffuse.contents = highlightColor.withAlphaComponent(shellAlpha)
-      }
+      material.emission.contents = displayColor.withAlphaComponent(emissionAlpha)
+    }
+  }
+
+  private func anatomyColorForRegion(_ id: Int) -> UIColor {
+    switch id {
+    case 1, 2: return UIColor(hex: "#E97862") // chest
+    case 3, 4, 5, 6, 7, 8: return UIColor(hex: "#4F83FF") // deltoids
+    case 9, 10: return UIColor(hex: "#9B6CF6") // biceps
+    case 11, 12: return UIColor(hex: "#E9488C") // triceps
+    case 13, 14: return UIColor(hex: "#29C7E8") // forearms
+    case 15, 16, 17, 18, 19, 20: return UIColor(hex: "#7B4DF3") // upper back/lats/traps
+    case 21: return UIColor(hex: "#8FBDF6") // abs
+    case 22, 23, 24: return UIColor(hex: "#35B7C6") // obliques/lower back
+    case 25, 26: return UIColor(hex: "#FF7A1A") // glutes
+    case 27, 28, 29, 30: return UIColor(hex: "#F2D04B") // hip/adductors
+    case 31, 32: return UIColor(hex: "#37B757") // quads
+    case 33, 34: return UIColor(hex: "#2F8CFF") // hamstrings
+    case 35, 36: return UIColor(hex: "#F7479A") // calves
+    case 37, 38: return UIColor(hex: "#8D5CF6") // tibialis
+    case 39: return UIColor(hex: "#18C7D8") // neck
+    default: return UIColor(hex: "#7EA4B8")
     }
   }
 

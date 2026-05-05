@@ -71,12 +71,19 @@ Current renderer also accepts:
 - Avoid self-intersection between overlay shells and base.
 
 ## Material/Look Expectations
-- Base mesh: dark matte neutral, low emissive contribution.
-- Region overlays: flat/clean surfaces intended for runtime tinting in SceneKit.
+- Base mesh: dark matte neutral, low emissive contribution, visible only in seams/gutters and unsegmented extremity areas.
+- Region overlays: anatomically shaped muscle shells with a stable male muscle-map palette before runtime heat tinting is applied.
 - No baked neon gradients in texture maps; runtime coloring controls intensity.
 
-## V3 Silhouette Brief (Highest Priority)
-Target a stylized athletic mannequin, not photorealism. The goal is clean anatomy cues that still read well under flat FRONT/BACK camera views.
+## Male V1 Ecorche Brief (Highest Priority)
+Target a male ecorche-style muscle map, not a generic fitness mannequin. The first production asset should read like a high-quality anatomical muscle reference: full-body male proportions, visible muscle-group segmentation, and clear FRONT/BACK inspection.
+
+### Reference Direction
+1. Front and back views must read as a human muscle map before they read as a heatmap.
+2. Major muscles should have recognizable anatomical forms, not rectangular plates or marker blobs.
+3. Color segmentation should remain visible at rest so users can understand the map before they have training data.
+4. Runtime heat/intensity tinting may shift color, but it must not destroy muscle-group identity.
+5. Male body version ships first; future female or alternate body versions should reuse the same region key taxonomy unless the taxonomy is explicitly revised.
 
 ### Numeric Proportion Targets (Measure Against v2)
 1. Shoulder width (deltoid outer-to-outer): reduce by 10-15%.
