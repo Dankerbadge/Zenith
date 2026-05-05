@@ -152,7 +152,7 @@ export default function BodyMap3DProgressScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        scrollEnabled={!mapInteracting && cameraPreset !== 'ORBIT'}
+        scrollEnabled={!mapInteracting}
       >
         <View style={styles.header}>
           <Pressable onPress={() => router.back()}>
@@ -173,6 +173,10 @@ export default function BodyMap3DProgressScreen() {
             {BODY_MAP_TIMEFRAMES.map((value) => (
               <Pressable
                 key={value}
+                accessibilityRole="button"
+                accessibilityLabel={`Timeframe ${value}`}
+                accessibilityState={{ selected: timeframe === value }}
+                hitSlop={6}
                 style={[styles.pill, timeframe === value && styles.pillActive]}
                 onPress={() => setTimeframe(value)}
               >
@@ -189,6 +193,10 @@ export default function BodyMap3DProgressScreen() {
             {BODY_MAP_LENSES.map((lens) => (
               <Pressable
                 key={lens}
+                accessibilityRole="button"
+                accessibilityLabel={`Body map lens ${lens}`}
+                accessibilityState={{ selected: overlayMode === lens }}
+                hitSlop={6}
                 style={[styles.pill, overlayMode === lens && styles.pillActive]}
                 onPress={() => setOverlayMode(lens)}
               >
@@ -200,6 +208,10 @@ export default function BodyMap3DProgressScreen() {
             {CAMERA_PRESETS.map((preset) => (
               <Pressable
                 key={preset}
+                accessibilityRole="button"
+                accessibilityLabel={`Camera view ${preset}`}
+                accessibilityState={{ selected: cameraPreset === preset }}
+                hitSlop={6}
                 style={[styles.pill, cameraPreset === preset && styles.pillActive]}
                 onPress={() => setCameraPreset(preset)}
               >
@@ -257,13 +269,13 @@ export default function BodyMap3DProgressScreen() {
             />
           ) : (
             <View style={[styles.map, styles.mapFallback]}>
-              <Text style={styles.fallbackTitle}>iOS Native Preview</Text>
-              <Text style={styles.fallbackBody}>3D Body Map is currently wired for iOS native renderer.</Text>
+              <Text style={styles.fallbackTitle}>3D preview unavailable</Text>
+              <Text style={styles.fallbackBody}>Use the selection, hotspot, and history summaries below.</Text>
             </View>
           )}
         </GlassCard>
 
-        {Platform.OS === 'ios' && rendererMode && rendererMode !== 'asset' ? (
+        {__DEV__ && Platform.OS === 'ios' && rendererMode && rendererMode !== 'asset' ? (
           <GlassCard>
             <Text style={styles.cardTitle}>Renderer Status</Text>
             <Text style={styles.meta}>
@@ -298,10 +310,18 @@ export default function BodyMap3DProgressScreen() {
           <Text style={styles.cardTitle}>{overlayMode} Hotspots</Text>
           {topRegions.length ? (
             topRegions.map((region) => (
-              <View key={region.id} style={styles.row}>
+              <Pressable
+                key={region.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Select ${region.label}. Score ${region.score}`}
+                accessibilityState={{ selected: selectedRegionId === region.id }}
+                hitSlop={6}
+                style={({ pressed }) => [styles.row, selectedRegionId === region.id && styles.rowSelected, pressed && styles.rowPressed]}
+                onPress={() => setSelectedRegionId(region.id)}
+              >
                 <Text style={styles.rowLabel}>{region.label}</Text>
                 <Text style={styles.rowValue}>{region.score}</Text>
-              </View>
+              </Pressable>
             ))
           ) : (
             <Text style={styles.meta}>No regional load data yet.</Text>
@@ -364,7 +384,9 @@ const styles = StyleSheet.create({
   scoreGrid: { marginTop: 8, gap: 6 },
   scoreLine: { color: '#DFF8FF', fontWeight: '700', fontSize: 13 },
   scoreLineActive: { color: NEON_THEME.color.neonCyan, fontWeight: '900' },
-  row: { marginTop: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  row: { marginTop: 10, minHeight: 44, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 6, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  rowSelected: { backgroundColor: 'rgba(0,217,255,0.10)' },
+  rowPressed: { opacity: 0.86 },
   rowLabel: { color: '#DFF4FF', fontWeight: '700', flex: 1 },
   rowValue: { color: '#98ECFF', fontWeight: '900' },
 });

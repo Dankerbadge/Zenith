@@ -1,4 +1,5 @@
 import { getRecentDailyLogs, type WorkoutEntry } from './storageUtils';
+import { computeBodyStimulusLoad, workoutMetricSnapshot } from './activityMetricContinuity';
 
 export const BODY_MAP_LENSES = ['STIMULUS', 'SORENESS', 'PAIN', 'FATIGUE', 'COMPOSITE'] as const;
 export type BodyMapLens = (typeof BODY_MAP_LENSES)[number];
@@ -216,21 +217,8 @@ function inferWorkoutRegions(workout: WorkoutEntry): string[] {
   return regionsForGroups(['quads', 'hamstrings', 'calves', 'glutes', 'hipFlexors']);
 }
 
-function intensityMultiplier(workout: WorkoutEntry): number {
-  const intensity = String(workout.intensity || 'moderate').toLowerCase();
-  if (intensity === 'hard') return 1.25;
-  if (intensity === 'easy') return 0.78;
-  return 1;
-}
-
 function workoutBaseLoad(workout: WorkoutEntry): number {
-  const duration = Math.max(0, Number(workout.durationMin) || Number(workout.minutes) || 0);
-  const calories = Math.max(0, Number(workout.caloriesBurned) || 0);
-  const effort = Math.max(0, Number(workout.effortUnits) || Number(workout.effortScore) || 0);
-  const distance = Math.max(0, Number((workout as any)?.distance) || 0);
-
-  const raw = Math.max(duration * 1.35, calories * 0.32, effort * 2.5, distance * 14, 12);
-  return raw * intensityMultiplier(workout);
+  return computeBodyStimulusLoad(workoutMetricSnapshot(workout));
 }
 
 function painSignal(workout: WorkoutEntry): number {
